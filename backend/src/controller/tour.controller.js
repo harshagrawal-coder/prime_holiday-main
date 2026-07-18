@@ -4,7 +4,7 @@ import Mood from "../model.js/mood.schema.js";
 import Duration from "../model.js/duration.schema.js";
 import slugify from "slugify";
 import { uploadFile, deleteFile } from "../services/imagekit.js";
-
+import mongoose from "mongoose";
 export async function createTour(req, res) {
   try {
     const {
@@ -51,6 +51,9 @@ export async function createTour(req, res) {
       ? JSON.parse(req.body.exclusions)
       : [];
     const itinerary = req.body.itinerary ? JSON.parse(req.body.itinerary) : [];
+    const featuredBool = featured === "true";
+    const trendingBool = trending === "true";
+    const isActiveBool = isActive === "true";
     const slug = slugify(name, {
       lower: true,
       strict: true,
@@ -163,9 +166,9 @@ export async function createTour(req, res) {
         exclusions,
         itinerary,
         // Flags
-        trending,
-        featured,
-        isActive,
+        featured: featuredBool,
+        trending: trendingBool,
+        isActive: isActiveBool,
       });
       return res.status(201).json({
         success: true,
@@ -295,10 +298,10 @@ export async function updateTour(req, res) {
 
     const slug = name
       ? slugify(name, {
-          lower: true,
-          strict: true,
-          trim: true,
-        })
+        lower: true,
+        strict: true,
+        trim: true,
+      })
       : tour.slug;
     if (name) {
       const existingTour = await Tour.findOne({
@@ -497,8 +500,8 @@ export async function updateTour(req, res) {
         uploadedFileIds.map(async (fileId) => {
           try {
             await deleteFile(fileId);
-          } catch (err) {
-            console.error("Rollback failed:", err.message);
+          } catch (error) {
+            console.error("Rollback failed:", error.message);
           }
         }),
       );
@@ -507,11 +510,13 @@ export async function updateTour(req, res) {
         message: error.message,
       });
     }
-  } catch (error) {}
-  return res.status(500).json({
-    success: false,
-    message: error.message,
-  });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+
 }
 
 export async function deleteTour(req, res) {

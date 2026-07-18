@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { blogPosts as defaultBlogs } from "../../data/blogPosts.js";
 import { readImageFileAsDataUrl } from "../../utils/readImageFileAsDataUrl";
-
+import { API_URI } from "../../config/config.js"
+import axios from "axios"
 const initialState = {
   title: "",
   category: "",
@@ -14,8 +15,6 @@ const initialState = {
 const inputClassName =
   "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition-all duration-300 placeholder:text-slate-400 focus:border-orange-300 focus:ring-2 focus:ring-orange-500/20";
 
-const BLOG_STORAGE_KEY = "prime-holiday-blogs";
-
 const AddBlog = () => {
   const [formData, setFormData] = useState(initialState);
   const [imageFile, setImageFile] = useState(null);
@@ -25,6 +24,16 @@ const AddBlog = () => {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // const fetchBlogCategories = async () => {
+  //   const token = localStorage.getItem("token")
+  //   const response = await axios.get(`${API_URI}/blogCategory/admin/all?isActive=true`, {
+  //     headers: {
+  //       authorization: `bearer ${token}`
+  //     }
+  //   })
+  //   const
+  //     setCategories()
+  // }
   const handleChange = (event) => {
     const { name, value } = event.target;
     setFormData((current) => ({ ...current, [name]: value }));
@@ -117,10 +126,10 @@ const AddBlog = () => {
 
           <label className="flex flex-col gap-2 rounded-xl border border-dashed border-slate-300 bg-slate-50/70 px-4 py-3 text-sm text-slate-600 md:col-span-2">
             <span className="font-semibold text-slate-800">Upload blog image</span>
-            <input 
-              type="file" 
-              accept="image/jpeg,image/jpg,image/png,image/webp" 
-              onChange={handleImageUpload} 
+            <input
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/webp"
+              onChange={handleImageUpload}
               className="text-sm"
             />
             <span className="text-xs text-slate-500">
@@ -165,7 +174,7 @@ const AddBlog = () => {
 
           <div className="md:col-span-2 flex items-center justify-between gap-4 pt-2">
             <p className="text-sm text-slate-500">Blog post will be saved locally.</p>
-            <button 
+            <button
               disabled={isSubmitting}
               className="rounded-full bg-slate-950 px-6 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >

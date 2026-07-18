@@ -277,7 +277,6 @@ export async function getBlogs(req, res) {
 export async function getBlogBySlug(req, res) {
   try {
     const { slug } = req.params;
-
     const blog = await Blog.findOne({
       slug,
       isActive: true,
@@ -400,15 +399,10 @@ export async function getAdminBlogs(req, res) {
     };
 
     const sortQuery = sortOptions[sort] || sortOptions.newest;
-
     const currentPage = Math.max(Number(page) || 1, 1);
-
     const pageLimit = Math.min(Math.max(Number(limit) || 10, 1), 100);
-
     const skip = (currentPage - 1) * pageLimit;
-
     const totalBlogs = await Blog.countDocuments(query);
-
     const totalPages = Math.ceil(totalBlogs / pageLimit);
     const blogs = await Blog.find(query)
       .select(
@@ -446,6 +440,242 @@ export async function getAdminBlogs(req, res) {
     });
   }
 }
-export async function updateBlogs(req,res){
-  
+export async function getBlogById(req, res) {
+  try {
+    const { id } = req.params;
+
+    const blog = await Blog.findById(id)
+      .populate("categoryId", "name slug isActive")
+      .lean();
+
+    if (!blog) {
+      return res.status(404).json({
+        success: false,
+        message: "Blog not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Blog fetched successfully",
+      data: blog,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+export async function updateBlog(req, res) {
+  let uploadedFileId = null;
+
+  try {
+    const { id } = req.params;
+
+    const blog = await Blog.findById(id);
+
+    if (!blog) {
+      return res.status(404).json({
+        success: false,
+        message: "Blog not found",
+      });
+    }
+    const {
+      title,
+      excerpt,
+      content,
+      categoryId,
+      authorName,
+      keyHighlights,
+      featured,
+      popular,
+      status,
+      isActive,
+    } = req.body;
+    if (title && title !== blog.title) {
+      const slug = slugify(title, {
+        lower: true,
+        strict: true,
+        trim: true,
+      });
+
+      const existingBlog = await Blog.findOne({
+        slug,
+        _id: { $ne: id },
+      });
+      if (existingBlog) {
+        return res.status(400).json({
+          success: false,
+          message: "A blog with this title already exists",
+        });
+      }
+      blog.title = title;
+      blog.slug = slug;
+    }
+    if (excerpt !== undefined) {
+      blog.excerpt = excerpt;
+    }
+    if (authorName !== undefined) {
+      blog.authorName = authorName;
+    }
+    if (content !== undefined) {
+      blog.content = content;
+      const plainText = content.replace(/<[^>]*>/g, " ");
+      const wordCount = plainText
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean).length;
+
+      blog.readingTime = Math.max(
+        1,
+        Math.ceil(wordCount / 200)
+      );
+    }
+    if (categoryId && categoryId !== blog.categoryId.toString()) {
+      const category = await BlogCategory.findById(categoryId);
+
+      if (!category) {
+        return res.status(404).json({
+          success: false,
+          message: "Blog category not found",
+        });
+      }
+      blog.categoryId = category._id;
+      blog.categoryName = category.name;
+    }
+    if (keyHighlights !== undefined) {
+      let parsedHighlights = [];
+
+      try {
+        parsedHighlights = JSON.parse(keyHighlights);
+      } catch {
+        return res.status(400).json({
+          success: false,
+          message: "keyHighlights must be a valid JSON array",
+        });
+      }
+
+      if (!Array.isArray(parsedHighlights)) {
+        return res.status(400).json({
+          success: false,
+          message: "keyHighlights must be an array",
+        });
+      }
+
+      blog.keyHighlights = parsedHighlights;
+    }
+    if (featured !== undefined) {
+      blog.featured =
+        featured === true || featured === "true";
+    }
+
+    if (popular !== undefined) {
+      blog.popular =
+        popular === true || popular === "true";
+    }
+
+    if (isActive !== undefined) {
+      blog.isActive =
+        isActive === true || isActive === "true";
+    }
+    if (status !== undefined) {
+      if (!["draft", "published"].includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid status",
+        });
+      }
+      if (
+        blog.status === "draft" &&
+        status === "published" &&
+        !blog.publishedAt
+      ) {
+        blog.publishedAt = new Date();
+      }
+
+      blog.status = status;
+    }
+    const oldFileId = blog.coverImage?.fileId;
+    if (req.file) {
+      const uploadedImage = await uploadFile({
+        file: req.file.buffer,
+        fileName: req.file.originalname,
+        folder: "/blogs/covers",
+      });
+      uploadedFileId = uploadedImage.fileId;
+      blog.coverImage = {
+        url: uploadedImage.url,
+        fileId: uploadedImage.fileId,
+        alt: req.file.originalname
+          .replace(/\.[^/.]+$/, "")
+          .replace(/[-_]/g, " "),
+      };
+    }
+    await blog.save();
+    if (req.file && oldFileId) {
+      try {
+        await deleteFile(oldFileId);
+      } catch (err) {
+        console.error(
+          "Old image delete failed:",
+          err.message
+        );
+      }
+    }
+    return res.status(200).json({
+      success: true,
+      message: "Blog updated successfully",
+      data: blog,
+    });
+  } catch (error) {
+    if (uploadedFileId) {
+      try {
+        await deleteFile(uploadedFileId);
+      } catch (err) {
+        console.error(
+          "Rollback failed:",
+          err.message
+        );
+      }
+    }
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
+export async function deleteBlog(req, res) {
+  try {
+    const { id } = req.params;
+    const blog = await Blog.findById(id);
+    if (!blog) {
+      return res.status(404).json({
+        success: false,
+        message: "Blog not found",
+      });
+    }
+    // Delete cover image from ImageKit
+    if (blog.coverImage?.fileId) {
+      try {
+        await deleteFile(blog.coverImage.fileId);
+      } catch (error) {
+        console.error(
+          "Failed to delete image from ImageKit:",
+          error.message
+        );
+      }
+    }
+    await blog.deleteOne();
+    return res.status(200).json({
+      success: true,
+      message: "Blog deleted successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
 }

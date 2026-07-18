@@ -1,5 +1,4 @@
 import { Router } from "express";
-
 import {
   createBlogCategory,
   getBlogCategories,
@@ -8,14 +7,11 @@ import {
   updateBlogCategory,
   deleteBlogCategory,
 } from "../controller/blogCategory.controller.js";
-
 import { authenticate, isAdmin } from "../middleware/auth.middleware.js";
-
 import {
   validateCreateBlogCategory,
   validateUpdateBlogCategory,
 } from "../validators/blogCategoryValidators.js";
-
 const blogCategoryRouter = Router();
 blogCategoryRouter.post(
   "/",
@@ -40,7 +36,4 @@ blogCategoryRouter.put(
   updateBlogCategory,
 );
 blogCategoryRouter.delete("/:id", authenticate, isAdmin, deleteBlogCategory);
-
-
-
 export default blogCategoryRouter;

@@ -27,7 +27,7 @@ app.use(cookie());
 app.use("/api/auth", authRouter);
 // app.use("/website", authRouter);
 app.use("/api/region", regionRouter);
-app.use("/api/tours", tourRouter);
+app.use("/api/tour", tourRouter);
 app.use("/api/state", stateRouter);
 app.use("/api/city", cityRouter);
 app.use("/api/mood", moodRouter);

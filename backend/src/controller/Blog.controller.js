@@ -29,7 +29,7 @@ export async function createBlog(req, res) {
         message: "blog category is not found",
       });
     }
-    const slug = slugify(name, {
+    const slug = slugify(title, {
       lower: true,
       strict: true,
       trim: true,
@@ -91,7 +91,7 @@ export async function createBlog(req, res) {
         alt: imageAlt,
       },
       categoryId: category._id,
-      categoryName: category.name,
+      category: category.name,
       authorName: authorName || "Prime Holiday Editorial",
       readingTime,
       keyHighlights: parsedKeyHighlights,
@@ -499,7 +499,6 @@ export async function updateBlog(req, res) {
         strict: true,
         trim: true,
       });
-
       const existingBlog = await Blog.findOne({
         slug,
         _id: { $ne: id },

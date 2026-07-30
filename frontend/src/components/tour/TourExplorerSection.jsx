@@ -3,38 +3,35 @@ import { FaFilter, FaTimes } from "react-icons/fa";
 import { motion } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
 import { useTourFilters } from "../../hooks/useTourFilters";
-import toursData from "../../data/toursData.json";
 import TourFiltersContent from "./TourFiltersContent";
 import TourGrid from "./TourGrid";
 import TourHeroBanner from "./TourHeroBanner";
 import TourResultsHeader from "./TourResultsHeader";
-
-const categoryToVibeMap = {
-  hill: "Mountain",
-  mountain: "Mountain",
-  beach: "Beach",
-  beaches: "Beach",
-  spiritual: "Spiritual",
-  adventure: "Adventure",
-  heritage: "Heritage",
-};
-
-const vibeToCategoryMap = {
-  Mountain: "hill",
-  Beach: "beach",
-  Spiritual: "spiritual",
-  Adventure: "adventure",
-  Heritage: "heritage",
-};
+import axios from "axios"
+import { API_URI } from "../../config/config"
 
 const TourExplorerSection = () => {
-  const tours = toursData;
+  const [tours, setTours] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [durations, setDurations] = useState([])
+  const [regions, setRegions] = useState([]);
+  const [moods, setMoods] = useState([]);
+  const [city, setCity] = useState([])
+  const [states, setStates] = useState([])
   const [searchParams, setSearchParams] = useSearchParams();
   const activeCategoryFromUrl = useMemo(
     () => searchParams.get("category")?.toLowerCase() || "",
     [searchParams]
   );
-  const selectedVibe = categoryToVibeMap[activeCategoryFromUrl] || "All Vibes";
+  const selectedVibe = useMemo(() => {
+    if (!activeCategoryFromUrl) return "All Vibes";
+
+    const mood = moods.find(
+      (item) => item.slug.toLowerCase() === activeCategoryFromUrl
+    );
+
+    return mood ? mood.name : "All Vibes";
+  }, [activeCategoryFromUrl, moods]);
   const {
     selectedRegion,
     setSelectedRegion,
@@ -50,48 +47,146 @@ const TourExplorerSection = () => {
     displayStates,
     displayCities,
     resetFilters,
-  } = useTourFilters({ selectedVibeExternal: selectedVibe, tours });
+  } = useTourFilters({ selectedVibeExternal: selectedVibe, tours, city, moods, states, durations, regions });
+
   const [openDropdown, setOpenDropdown] = useState(null);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
-
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (!event.target.closest(".dropdown-container")) {
         setOpenDropdown(null);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const fetchTours = async () => {
+    try {
+      const token = localStorage.getItem("token")
+      const response = await axios.get(`${API_URI}/tour`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+      setTours(response.data.data)
+    } catch (error) {
+      console.log(error.message)
+    }
+  }
+  const fetchDuration = async () => {
+    try {
+      const token = localStorage.getItem("token")
+      const response = await axios.get(`${API_URI}/duration`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+      setDurations(response.data.durations)
+    } catch (error) {
+      console.log(error.message)
+    }
+  }
+  const fetchRegion = async () => {
+    try {
+      const token = localStorage.getItem("token")
+      const response = await axios.get(`${API_URI}/region`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+      setRegions(response.data.regions)
+    } catch (error) {
+      console.log(error.message)
+    }
+  }
+  const fetchCity = async () => {
+    try {
+      const token = localStorage.getItem("token")
+      const response = await axios.get(`${API_URI}/city`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+      setCity(response.data.cities)
+    } catch (error) {
+      console.log(error.message)
+    }
+  }
+  const fetchMood = async () => {
+    try {
+      const token = localStorage.getItem("token")
+      const response = await axios.get(`${API_URI}/mood`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+      setMoods(response.data.mood)
+    } catch (error) {
+      console.log(error.message)
+    }
+  }
+  const fetchState = async () => {
+    try {
+      const token = localStorage.getItem("token")
+      const response = await axios.get(`${API_URI}/state`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+      setStates(response.data.states)
+    } catch (error) {
+      console.log(error.message)
+    }
+  }
+  // useEffect(() => {
+  //   tours.forEach((tour) => {
+  //     if (tour.image) {
+  //       const image = new Image();
+  //       image.src = tour.image;
+  //     }
+  //   });
+  // }, [tours]);
   useEffect(() => {
-    tours.forEach((tour) => {
-      if (tour.image) {
-        const image = new Image();
-        image.src = tour.image;
-      }
-    });
-  }, [tours]);
-
+    const fetchData = async () => {
+      setLoading(true);
+      await Promise.all([
+        fetchTours(),
+        fetchDuration(),
+        fetchRegion(),
+        fetchState(),
+        fetchCity(),
+        fetchMood(),
+      ]);
+      setLoading(false);
+    };
+    fetchData();
+  }, []);
   const updateCategoryInUrl = (value) => {
-    const nextCategory = value === "All Vibes" ? "" : vibeToCategoryMap[value] || value.toLowerCase();
     const nextParams = new URLSearchParams(searchParams);
-
-    if (nextCategory) {
-      nextParams.set("category", nextCategory);
-    } else {
+    if (value === "All Vibes") {
       nextParams.delete("category");
+    } else {
+      const mood = moods.find(
+        (item) => item.name.toLowerCase() === value.toLowerCase()
+      );
+
+      if (mood) {
+        nextParams.set("category", mood.slug);
+      }
     }
 
     setSearchParams(nextParams, { replace: true });
   };
-
   const handleVibeChange = (value) => {
     updateCategoryInUrl(value);
   };
-
   const filterContentProps = {
+    durations,
+    city: displayCities,
+    regions,
+    moods,
+    states: displayStates,
     selectedRegion,
     setSelectedRegion,
     selectedStates,
@@ -104,8 +199,6 @@ const TourExplorerSection = () => {
     setSelectedVibe: handleVibeChange,
     priceRange,
     setPriceRange,
-    displayStates,
-    displayCities,
     openDropdown,
     setOpenDropdown,
   };
@@ -124,6 +217,13 @@ const TourExplorerSection = () => {
     priceRange,
     filteredTours.length,
   ].join("|");
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        Loading...
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F7F7FB]">

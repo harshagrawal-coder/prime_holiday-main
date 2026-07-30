@@ -54,7 +54,6 @@ const States = () => {
       setError(error.message);
     }
   };
-
   const fetchRegions = async () => {
     try {
       const token = localStorage.getItem("token");

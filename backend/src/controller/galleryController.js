@@ -2,10 +2,10 @@ import Gallery from "../model.js/gallerySchema.js";
 import Mood from "../model.js/mood.schema.js";
 import { uploadFile, deleteFile } from "../services/imagekit.js";
 export async function createGallery(req, res) {
-  let uploadedFileId = null;
+  let uploadedFileIds = [];
   try {
-    const { moodId, alt, order } = req.body;
-    if (!req.file) {
+    const { moodId, order } = req.body;
+    if (!req.files || req.files.length === 0) {
       return res.status(400).json({
         success: false,
         message: "Gallery image is required",
@@ -18,36 +18,44 @@ export async function createGallery(req, res) {
         message: "Mood not found",
       });
     }
-    const imageAlt = req.file.originalname
-      .replace(/\.[^/.]+$/, "")
-      .replace(/[-_]/g, " ");
-    const uploadedImage = await uploadFile({
-      file: req.file.buffer,
-      fileName: imageAlt,
-      folder: "/gallery",
-    });
-    uploadedFileId = uploadedImage.fileId;
-    const gallery = await Gallery.create({
-      url: uploadedImage.url,
-      fileId: uploadedImage.fileId,
-      alt: req.file.originalname,
-      moodId: mood._id,
-      moodName: mood.name,
-      order: Number(order) || 0,
-    });
-
+    const galleries = [];
+    for (const image of req.files) {
+      const uploadedImage = await uploadFile({
+        file: image.buffer,
+        fileName: image.originalname,
+        folder: "/gallery",
+      });
+      uploadedFileIds.push(uploadedImage.fileId);
+      const imageAlt = image.originalname
+        .replace(/\.[^/.]+$/, "")
+        .replace(/[-_]/g, " ");
+      const gallery = await Gallery.create({
+        url: uploadedImage.url,
+        fileId: uploadedImage.fileId,
+        alt: imageAlt,
+        moodId: mood._id,
+        moodName: mood.name,
+        order: Number(order) || 0,
+      });
+      galleries.push(gallery);
+    }
     return res.status(201).json({
       success: true,
-      message: "Gallery image uploaded successfully",
-      data: gallery,
+      message: "Gallery uploaded successfully",
+      count: galleries.length,
+      data: galleries
     });
   } catch (error) {
-    if (uploadedFileId) {
-      try {
-        await deleteFile(uploadedFileId);
-      } catch (deleteError) {
-        console.error("Gallery image rollback failed:", deleteError.message);
-      }
+    if (uploadedFileIds.length > 0) {
+      await Promise.all(
+        uploadedFileIds.map(async (fileId) => {
+          try {
+            await deleteFile(fileId);
+          } catch (err) {
+            console.log(err.message);
+          }
+        })
+      );
     }
     return res.status(500).json({
       success: false,

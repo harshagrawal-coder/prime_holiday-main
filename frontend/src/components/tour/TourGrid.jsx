@@ -12,7 +12,7 @@ const TourGrid = ({ tours, animationKey }) => (
       className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3 xl:gap-6"
     >
       {tours.length > 0 ? (
-        tours.map((tour) => <TourCard key={tour.id} tour={tour} />)
+        tours.map((tour) => <TourCard key={tour._id} tour={tour} />)
       ) : (
         <div className="col-span-full py-20 text-center">
           <p className="text-2xl font-black uppercase italic text-slate-300">No Adventures Found</p>

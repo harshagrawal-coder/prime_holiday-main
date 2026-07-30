@@ -1,9 +1,12 @@
 import { FaChevronDown, FaClock, FaMapMarkerAlt, FaMountain } from "react-icons/fa";
 import TourDropdownField from "./TourDropdownField";
 
-const allRegions = ["All Regions", "North", "South", "East", "WestCentral", "NorthEast"];
-
 const TourFiltersContent = ({
+  durations,
+  city,
+  regions,
+  moods,
+  states,
   selectedRegion,
   setSelectedRegion,
   selectedStates,
@@ -16,8 +19,6 @@ const TourFiltersContent = ({
   setSelectedVibe,
   priceRange,
   setPriceRange,
-  displayStates,
-  displayCities,
   openDropdown,
   setOpenDropdown,
 }) => (
@@ -27,7 +28,7 @@ const TourFiltersContent = ({
       id="region"
       icon={<FaChevronDown />}
       value={selectedRegion || "All Regions"}
-      options={allRegions}
+      options={regions}
       onSelect={(region) => {
         setSelectedRegion(region === "All Regions" ? "" : region);
         setSelectedStates([]);
@@ -42,7 +43,7 @@ const TourFiltersContent = ({
       id="state"
       icon={<FaChevronDown />}
       value={selectedStates}
-      options={displayStates.map((state) => state.state)}
+      options={states}
       onSelect={(state) =>
         setSelectedStates((prev) =>
           prev.includes(state) ? prev.filter((item) => item !== state) : [...prev, state]
@@ -58,7 +59,7 @@ const TourFiltersContent = ({
       id="city"
       icon={<FaMapMarkerAlt />}
       value={selectedCities}
-      options={displayCities}
+      options={city}
       onSelect={(city) =>
         setSelectedCities((prev) =>
           prev.includes(city) ? prev.filter((item) => item !== city) : [...prev, city]
@@ -74,8 +75,14 @@ const TourFiltersContent = ({
       id="days"
       icon={<FaClock />}
       value={selectedDays}
-      options={["All Durations", "Same Day", "2-3 Days", "4+ Days"]}
-      onSelect={(days) => setSelectedDays(days)}
+      options={durations}
+      onSelect={(day) =>
+        setSelectedDays((prev) =>
+          prev.includes(day)
+            ? prev.filter((item) => item !== day)
+            : [...prev, day]
+        )
+      }
       openDropdown={openDropdown}
       setOpenDropdown={setOpenDropdown}
     />
@@ -85,7 +92,7 @@ const TourFiltersContent = ({
       id="mood"
       icon={<FaMountain />}
       value={selectedVibe}
-      options={["All Vibes", "Mountain", "Beach", "Adventure", "Heritage", "Spiritual", "Romantic"]}
+      options={moods}
       onSelect={(mood) => setSelectedVibe(mood)}
       openDropdown={openDropdown}
       setOpenDropdown={setOpenDropdown}

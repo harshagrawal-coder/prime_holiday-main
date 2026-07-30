@@ -481,7 +481,7 @@ const Tours = () => {
                       <label className={labelClass}>State *</label>
                       <select value={editingTour.stateId || ""} onChange={(e) => handleEditStateChange(e.target.value)} className={inputClass} disabled={!editingTour.regionId}>
                         <option value="">{editingTour.regionId ? "Select State" : "Select Region First"}</option>
-                        {stateOptions.filter((s) => s.regionId === editingTour.regionId).map((s) => (
+                        {stateOptions.filter((s) => (s.regionId?._id || s.regionId) === editingTour.regionId).map((s) => (
                           <option key={s._id} value={s._id}>{s.name}</option>
                         ))}
                       </select>
@@ -490,7 +490,7 @@ const Tours = () => {
                       <label className={labelClass}>City *</label>
                       <select value={editingTour.cityId || ""} onChange={(e) => handleEditChange("cityId", e.target.value)} className={inputClass} disabled={!editingTour.stateId}>
                         <option value="">{editingTour.stateId ? "Select City" : "Select State First"}</option>
-                        {cityOptions.filter((c) => c.stateId === editingTour.stateId).map((c) => (
+                        {cityOptions.filter((c) => (c.stateId?._id || c.stateId) === editingTour.stateId).map((c) => (
                           <option key={c._id} value={c._id}>{c.name}</option>
                         ))}
                       </select>

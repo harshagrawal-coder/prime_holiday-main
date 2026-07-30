@@ -49,7 +49,7 @@ const blogSchema = new mongoose.Schema(
       required: [true, "Blog category is required"],
       index: true,
     },
-    categoryName: {
+    category: {
       type: String,
       required: true,
       trim: true,

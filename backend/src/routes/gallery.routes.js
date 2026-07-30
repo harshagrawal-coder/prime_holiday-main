@@ -18,7 +18,7 @@ galleryRouter.post(
   "/",
   authenticate,
   isAdmin,
-  upload.single("image"),
+  upload.array("images"),
   validateCreateGallery,
   createGallery,
 );

@@ -36,7 +36,6 @@ const gallerySchema = new mongoose.Schema(
       trim: true,
       lowercase: true,
     },
-
     order: {
       type: Number,
       default: 0,

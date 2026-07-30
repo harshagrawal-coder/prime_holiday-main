@@ -1,126 +1,83 @@
-import { useEffect, useMemo, useState } from "react";
-import locationData from "../data/locationData.json";
-
-const FILTERS_STORAGE_KEY = "prime-holiday-tour-filters";
-
-const parsePrice = (priceStr) => {
-  const numbers = priceStr?.match(/\d[\d,]*/g) || [];
-  const lastValue = numbers[numbers.length - 1];
-  return lastValue ? parseInt(lastValue.replace(/,/g, ""), 10) : 0;
-};
-
-const getInitialFilters = () => {
-  try {
-    const saved = localStorage.getItem(FILTERS_STORAGE_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      return {
-        selectedRegion: parsed.selectedRegion || "",
-        selectedStates: parsed.selectedStates || [],
-        selectedCities: parsed.selectedCities || [],
-        selectedDays: parsed.selectedDays || "All Durations",
-        priceRange: parsed.priceRange || 150000,
-      };
-    }
-  } catch (e) {
-    console.log("Using default filters");
-  }
-  return {
-    selectedRegion: "",
-    selectedStates: [],
-    selectedCities: [],
-    selectedDays: "All Durations",
-    priceRange: 150000,
-  };
-};
-
-const saveFilters = (filters) => {
-  try {
-    localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(filters));
-  } catch (e) {
-    console.log("Could not save filters");
-  }
-};
-
-export const useTourFilters = ({ selectedVibeExternal, tours = [] } = {}) => {
-  const initialFilters = getInitialFilters();
-  
-  const [selectedRegion, setSelectedRegion] = useState(initialFilters.selectedRegion);
-  const [selectedStates, setSelectedStates] = useState(initialFilters.selectedStates);
-  const [selectedCities, setSelectedCities] = useState(initialFilters.selectedCities);
-  const [selectedDays, setSelectedDays] = useState(initialFilters.selectedDays);
-  const [selectedVibeState, setSelectedVibe] = useState("All Vibes");
-  const [priceRange, setPriceRange] = useState(initialFilters.priceRange);
-  const selectedVibe = selectedVibeExternal ?? selectedVibeState;
-
-  useEffect(() => {
-    const filters = {
-      selectedRegion,
-      selectedStates,
-      selectedCities,
-      selectedDays,
-      priceRange,
-    };
-    saveFilters(filters);
-  }, [selectedRegion, selectedStates, selectedCities, selectedDays, priceRange]);
-
-  const allStatesFlattened = useMemo(() => Object.values(locationData).flat(), []);
-
-  const displayStates = useMemo(
-    () => (selectedRegion ? locationData[selectedRegion] || [] : allStatesFlattened),
-    [selectedRegion, allStatesFlattened]
-  );
-
-  const displayCities = useMemo(() => {
-    if (selectedStates.length > 0) {
-      return allStatesFlattened
-        .filter((state) => selectedStates.includes(state.state))
-        .flatMap((state) => state.cities);
-    }
-
-    if (selectedRegion) {
-      return (locationData[selectedRegion] || []).flatMap((state) => state.cities);
-    }
-
-    return allStatesFlattened.flatMap((state) => state.cities);
-  }, [selectedStates, selectedRegion, allStatesFlattened]);
-
+import { useMemo, useState } from "react";
+export const useTourFilters = ({
+  selectedVibeExternal,
+  tours = [],
+  regions = [],
+  states = [],
+  city = [],
+  durations = [],
+  moods = [],
+} = {}) => {
+  const [selectedRegion, setSelectedRegion] = useState("");
+  const [selectedStates, setSelectedStates] = useState([]);
+  const [selectedCities, setSelectedCities] = useState([]);
+  const [selectedDays, setSelectedDays] = useState([]);
+  const [priceRange, setPriceRange] = useState(150000);
+  const selectedVibe = selectedVibeExternal || "All Vibes";
   const resetFilters = () => {
     setSelectedRegion("");
     setSelectedStates([]);
     setSelectedCities([]);
-    setSelectedDays("All Durations");
-    setSelectedVibe("All Vibes");
+    setSelectedDays([]);
     setPriceRange(150000);
-    localStorage.removeItem(FILTERS_STORAGE_KEY);
   };
+  const displayStates = useMemo(() => {
+    if (!selectedRegion) return states;
+    // console.log(states[0])
+    return states.filter(
+      (state) => state.regionId?.name === selectedRegion
+    );
+  }, [selectedRegion, states]);
+  const displayCities = useMemo(() => {
+    if (selectedStates.length === 0) return city;
+    // console.log(city[0]);
+    return city.filter((item) =>
+      selectedStates.includes(item.stateId?.name)
+    );
+  }, [selectedStates, city]);
+  const filteredTours = useMemo(() => {
+    return tours.filter((tour) => {
+      const matchVibe =
+        selectedVibe === "All Vibes" ||
+        tour.moodName?.toLowerCase() === selectedVibe.toLowerCase();
 
-  const filteredTours = useMemo(
-    () =>
-      tours.filter((tour) => {
-        const matchVibe =
-          selectedVibe === "All Vibes" || tour.mood?.toLowerCase() === selectedVibe.toLowerCase();
-        const matchRegion = !selectedRegion || tour.region === selectedRegion;
-        const matchState = selectedStates.length === 0 || selectedStates.includes(tour.state);
-        const matchCity = selectedCities.length === 0 || selectedCities.includes(tour.city);
-        const tourDays = tour.days?.toLowerCase() || "";
-        const matchDays =
-          selectedDays === "All Durations" ||
-          (selectedDays === "Same Day" && tourDays.includes("same")) ||
-          (selectedDays === "2-3 Days" && (tourDays.includes("2") || tourDays.includes("3"))) ||
-          (selectedDays === "4+ Days" && parseInt(tourDays, 10) >= 4);
-
-        return (
-          matchVibe &&
-          matchRegion &&
-          matchState &&
-          matchCity &&
-          matchDays &&
-          parsePrice(tour.priceRange) <= priceRange
+      const matchRegion =
+        !selectedRegion ||
+        tour.regionName?.toLowerCase() === selectedRegion.toLowerCase();
+      const matchState =
+        selectedStates.length === 0 ||
+        selectedStates.some(
+          state => state.toLowerCase() === tour.stateName?.toLowerCase()
         );
-      }),
-    [priceRange, selectedCities, selectedDays, selectedRegion, selectedStates, selectedVibe, tours]
-  );
+      const matchCity =
+        selectedCities.length === 0 ||
+        selectedCities.some(
+          city => city.toLowerCase() === tour.cityName?.toLowerCase()
+        );
+      const matchDays =
+        selectedDays.length === 0 ||
+        selectedDays.some(
+          day => day.toLowerCase() === tour.durationName?.toLowerCase()
+        );
+      const matchPrice = tour.price <= priceRange;
+      return (
+        matchRegion &&
+        matchState &&
+        matchCity &&
+        matchDays &&
+        matchVibe &&
+        matchPrice
+      );
+    });
+  }, [
+    priceRange,
+    selectedCities,
+    selectedDays,
+    selectedRegion,
+    selectedStates,
+    selectedVibe,
+    tours,
+  ]);
 
   return {
     selectedRegion,
@@ -131,13 +88,11 @@ export const useTourFilters = ({ selectedVibeExternal, tours = [] } = {}) => {
     setSelectedCities,
     selectedDays,
     setSelectedDays,
-    selectedVibe,
-    setSelectedVibe,
     priceRange,
     setPriceRange,
     filteredTours,
+    resetFilters,
     displayStates,
     displayCities,
-    resetFilters,
   };
 };

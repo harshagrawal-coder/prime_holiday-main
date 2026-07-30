@@ -4,9 +4,9 @@ import { upload } from "../services/multer.js";
 
 import { createBlog, getAdminBlogs, getBlogById, updateBlog, deleteBlog, getBlogBySlug, getBlogs } from "../controller/Blog.controller.js";
 const blogRouter = Router()
-blogRouter.post("/", authenticate, isAdmin, createBlog)
+blogRouter.post("/", authenticate, isAdmin, upload.single("image"), createBlog)
 blogRouter.get("/", authenticate, getBlogs)
-blogRouter.get("/admin/all", authenticate, isAdmin,getAdminBlogs)
+blogRouter.get("/admin/all", authenticate, isAdmin, getAdminBlogs)
 blogRouter.get(
     "/:id",
     authenticate,
@@ -14,7 +14,7 @@ blogRouter.get(
     getBlogById
 );
 blogRouter.get("/slug/:slug", authenticate, getBlogBySlug)
-blogRouter.put("/:id", authenticate, isAdmin, updateBlog)
+blogRouter.put("/:id", authenticate, isAdmin, upload.single("image"), updateBlog)
 blogRouter.delete("/:id", authenticate, isAdmin, deleteBlog)
 
 export default blogRouter

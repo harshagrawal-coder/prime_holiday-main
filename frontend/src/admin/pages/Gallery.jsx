@@ -1,319 +1,470 @@
-import { useState, useRef } from "react";
-import { FaImages, FaUpload, FaTrash, FaSearch, FaCheck, FaTimes, FaTag, FaPlus, FaEdit, FaCloudUploadAlt } from "react-icons/fa";
-import { galleryItems as defaultGallery } from "../../data/galleryItems.js";
-
-const getImageSrc = (image) => {
-  if (!image) return "https://placehold.co/400x400?text=No+Image";
-  if (image.startsWith("http") || image.startsWith("data:")) return image;
-  return "https://placehold.co/400x400?text=No+Image";
-};
-
-const GALLERY_STORAGE_KEY = "prime-holiday-gallery";
-
-const getStoredGallery = () => {
-  try {
-    const stored = localStorage.getItem(GALLERY_STORAGE_KEY);
-    return stored ? JSON.parse(stored) : null;
-  } catch { return null; }
-};
+import { useState, useEffect, useRef } from "react";
+import {
+  FaImages,
+  FaEdit,
+  FaTrash,
+  FaPlus,
+  FaTimes,
+  FaToggleOn,
+  FaToggleOff,
+  FaUpload,
+} from "react-icons/fa";
+import { API_URI } from "../../config/config";
+import axios from "axios";
 
 const Gallery = () => {
-  const [images, setImages] = useState(() => getStoredGallery() || defaultGallery);
+  const [items, setItems] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [formData, setFormData] = useState({
+    moodId: "",
+    order: "",
+    images: [],
+  });
+  const [error, setError] = useState("");
+  const [activeFilter, setActiveFilter] = useState("all");
+  const [moods, setMoods] = useState([]);
   const [search, setSearch] = useState("");
-  const [tagFilter, setTagFilter] = useState("");
-  const [selectedImages, setSelectedImages] = useState([]);
-  const [isDragging, setIsDragging] = useState(false);
-  const [uploadQueue, setUploadQueue] = useState([]);
+  const [activeFilterValue, setActiveFilterValue] = useState(undefined);
   const fileInputRef = useRef(null);
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setIsDragging(true);
+  const fetchGallery = async (isActive) => {
+    const token = localStorage.getItem("token");
+    try {
+      const params = {};
+      const activeParam = isActive !== undefined ? isActive : activeFilterValue;
+      if (activeParam !== undefined) params.isActive = activeParam;
+      if (search.trim()) params.search = search.trim();
+      const response = await axios.get(`${API_URI}/gallery/admin/all`, {
+        headers: { authorization: `Bearer ${token}` },
+        params,
+      });
+      setItems(response.data.data);
+    } catch (error) {
+      setError(error.response?.data?.message || error.message);
+    }
   };
 
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
+  const fetchMoods = async () => {
+    const token = localStorage.getItem("token");
+    try {
+      const response = await axios.get(`${API_URI}/mood`, {
+        headers: { authorization: `Bearer ${token}` },
+      });
+      setMoods(response.data.mood || []);
+    } catch (error) {
+      console.log(error.response?.data?.message || error.message);
+    }
   };
 
-  const handleDrop = (e) => {
+  useEffect(() => {
+    fetchGallery();
+    fetchMoods();
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => fetchGallery(), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsDragging(false);
-    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith("image/"));
-    handleFiles(files);
+    const token = localStorage.getItem("token");
+    try {
+      const headers = { Authorization: `Bearer ${token}` };
+      if (editingId) {
+        const hasNewImage = formData.images.length > 0;
+        if (hasNewImage) {
+          const fd = new FormData();
+          fd.append("image", formData.images[0].file);
+          fd.append("moodId", formData.moodId);
+          fd.append("order", formData.order || 0);
+          const response = await axios.put(`${API_URI}/gallery/${editingId}`, fd, { headers });
+          setItems((prev) =>
+            prev.map((item) => (item._id === editingId ? response.data.data : item))
+          );
+        } else {
+          const response = await axios.put(
+            `${API_URI}/gallery/${editingId}`,
+            { moodId: formData.moodId, order: Number(formData.order) || 0 },
+            { headers }
+          );
+          setItems((prev) =>
+            prev.map((item) => (item._id === editingId ? response.data.data : item))
+          );
+        }
+      } else {
+        const fd = new FormData();
+        fd.append("moodId", formData.moodId);
+        fd.append("order", formData.order || 0);
+        formData.images.forEach((item) => fd.append("images", item.file));
+        const response = await axios.post(`${API_URI}/gallery`, fd, { headers });
+        setItems((prev) => [...response.data.data, ...prev]);
+      }
+      closeModal();
+    } catch (error) {
+      setError(error.response?.data?.message || error.message);
+    }
   };
 
-  const handleFileSelect = (e) => {
-    const files = Array.from(e.target.files);
-    handleFiles(files);
+  const handleDelete = async (id) => {
+    const confirmDelete = window.confirm("Delete this gallery image?");
+    if (!confirmDelete) return;
+    const token = localStorage.getItem("token");
+    try {
+      await axios.delete(`${API_URI}/gallery/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setItems((prev) => prev.filter((item) => item._id !== id));
+    } catch (error) {
+      setError(error.response?.data?.message || error.message);
+    }
+  };
+
+  const toggleStatus = async (id, current) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.put(
+        `${API_URI}/gallery/${id}`,
+        { isActive: !current },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (activeFilter === "all") {
+        setItems((prev) =>
+          prev.map((item) => (item._id === id ? response.data.data : item))
+        );
+      } else {
+        setItems((prev) => prev.filter((item) => item._id !== id));
+      }
+    } catch (error) {
+      console.log(error.response?.data?.message || error.message);
+    }
+  };
+
+  const openModal = (item = null) => {
+    if (item) {
+      setEditingId(item._id);
+      setFormData({
+        moodId: item.moodId?._id || item.moodId || "",
+        order: String(item.order ?? 0),
+        images: [],
+        previewUrl: item.url,
+      });
+    } else {
+      setEditingId(null);
+      setFormData({ moodId: "", order: "", images: [], previewUrl: null });
+    }
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setEditingId(null);
+    setFormData({ moodId: "", order: "", images: [], previewUrl: null });
+    setError("");
   };
 
   const handleFiles = (files) => {
-    const validFiles = files.filter(f => 
+    const validFiles = Array.from(files).filter((f) =>
       ["image/jpeg", "image/jpg", "image/png", "image/webp"].includes(f.type)
     );
-    const newQueue = validFiles.map(file => ({
+    const newFiles = validFiles.map((file) => ({
       file,
       preview: URL.createObjectURL(file),
-      progress: 0,
     }));
-    setUploadQueue(prev => [...prev, ...newQueue]);
+    setFormData((prev) => ({
+      ...prev,
+      images: [...prev.images, ...newFiles],
+    }));
+  };
+
+  const handleImageChange = (e) => {
+    handleFiles(e.target.files);
+    e.target.value = "";
   };
 
   const removeFromQueue = (index) => {
-    setUploadQueue(prev => prev.filter((_, i) => i !== index));
+    setFormData((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index),
+    }));
   };
 
-  const uploadQueueFiles = async () => {
-    for (let i = 0; i < uploadQueue.length; i++) {
-      const { file, preview } = uploadQueue[i];
-      const newImage = {
-        id: `gallery-${Date.now()}-${i}`,
-        title: "Gallery Upload",
-        location: "Unknown",
-        category: "General",
-        image: preview,
-        tags: [],
-        heightClass: "h-[300px]",
-      };
-      const updatedImages = [newImage, ...images];
-      setImages(updatedImages);
-      localStorage.setItem(GALLERY_STORAGE_KEY, JSON.stringify(updatedImages));
-    }
-    setUploadQueue([]);
-  };
-
-  const deleteImage = (id) => {
-    if (window.confirm("Delete this image?")) {
-      const updatedImages = images.filter(img => img.id !== id);
-      setImages(updatedImages);
-      localStorage.setItem(GALLERY_STORAGE_KEY, JSON.stringify(updatedImages));
-      setSelectedImages(selectedImages.filter(imgId => imgId !== id));
-    }
-  };
-
-  const deleteSelected = () => {
-    if (window.confirm(`Delete ${selectedImages.length} selected images?`)) {
-      selectedImages.forEach(id => deleteContextImage(id));
-      setImages(images.filter(img => !selectedImages.includes(img.id)));
-      setSelectedImages([]);
-    }
-  };
-
-  const toggleSelect = (id) => {
-    setSelectedImages(prev => 
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-    );
-  };
-
-  const selectAll = () => {
-    if (selectedImages.length === filteredImages.length) {
-      setSelectedImages([]);
-    } else {
-      setSelectedImages(filteredImages.map(img => img.id));
-    }
-  };
-
-  const addTag = (imgId) => {
-    const image = images.find(img => img.id === imgId);
-    const tag = prompt("Enter tag name:");
-    if (tag && image) {
-      const newTags = [...(image.tags || []), tag];
-      setImages(images.map(img => img.id === imgId ? { ...img, tags: newTags } : img));
-    }
-  };
-
-  const filteredImages = images.filter(img => {
-    const matchesSearch = !search || 
-      img.title?.toLowerCase().includes(search.toLowerCase()) ||
-      img.location?.toLowerCase().includes(search.toLowerCase()) ||
-      img.tags?.some(t => t.toLowerCase().includes(search.toLowerCase()));
-    const matchesTag = !tagFilter || img.tags?.includes(tagFilter);
-    return matchesSearch && matchesTag;
-  });
-
-  const allTags = [...new Set(images.flatMap(img => img.tags || []))];
+  const filteredItems = items;
 
   return (
     <div className="p-6">
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Media Manager</h1>
-          <p className="text-sm text-slate-500">Upload, tag, and manage your images</p>
+          <h1 className="text-2xl font-bold text-slate-800">Gallery</h1>
+          <p className="text-sm text-slate-500">Manage gallery images and moods</p>
         </div>
-        {selectedImages.length > 0 && (
-          <button
-            onClick={deleteSelected}
-            className="flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-600"
-          >
-            <FaTrash size={12} />
-            Delete Selected ({selectedImages.length})
-          </button>
-        )}
-      </div>
-
-      <div className={`mb-4 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-6 text-center transition-colors ${
-        isDragging ? "border-orange-500 bg-orange-50" : ""
-      }`}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
-        <div className="flex flex-col items-center gap-3">
-          <FaUpload className="text-3xl text-slate-400" />
-          <div>
-            <p className="font-medium text-slate-700">Drag and drop images here</p>
-            <p className="text-sm text-slate-500">or</p>
-          </div>
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600"
-          >
-            Browse Files
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            accept="image/jpeg,image/jpg,image/png,image/webp"
-            onChange={handleFileSelect}
-            className="hidden"
-          />
-        </div>
-      </div>
-
-      {uploadQueue.length > 0 && (
-        <div className="mb-4 rounded-xl border border-slate-200 bg-white p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="font-semibold text-slate-800">{uploadQueue.length} files ready to upload</h3>
-            <button
-              onClick={uploadQueueFiles}
-              className="flex items-center gap-2 rounded-lg bg-orange-500 px-3 py-1.5 text-sm font-semibold text-white hover:bg-orange-600"
-            >
-              <FaUpload size={12} />
-              Upload All
-            </button>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2">
-            {uploadQueue.map((item, index) => (
-              <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-slate-200">
-                <img src={item.preview} alt="Preview" className="h-full w-full object-cover" />
-                <button
-                  onClick={() => removeFromQueue(index)}
-                  className="absolute top-1 right-1 rounded-full bg-red-500 p-1 text-white"
-                >
-                  <FaTimes size={10} />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row">
-        <div className="relative flex-1">
-          <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search images by title, location, or tag..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-slate-200 pl-10 pr-4 py-2.5 text-sm focus:border-orange-500 focus:outline-none"
-          />
-        </div>
-        {allTags.length > 0 && (
-          <select
-            value={tagFilter}
-            onChange={(e) => setTagFilter(e.target.value)}
-            className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm focus:border-orange-500 focus:outline-none"
-          >
-            <option value="">All Tags</option>
-            {allTags.map(tag => (
-              <option key={tag} value={tag}>{tag}</option>
-            ))}
-          </select>
-        )}
         <button
-          onClick={selectAll}
-          className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
+          onClick={() => openModal()}
+          className="flex items-center gap-2 rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600"
         >
-          <FaCheck size={12} />
-          {selectedImages.length === filteredImages.length ? "Deselect All" : "Select All"}
+          <FaPlus size={12} /> Add Image
         </button>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-        {filteredImages.length === 0 ? (
-          <div className="col-span-full flex flex-col items-center justify-center py-20 rounded-xl border border-dashed border-slate-300">
-            <FaImages className="text-4xl text-slate-400 mb-3" />
-            <p className="text-lg font-semibold text-slate-600">No images found</p>
-            <p className="text-sm text-slate-500">Upload images or adjust filters</p>
-          </div>
-        ) : (
-          filteredImages.map((img) => (
-            <div
-              key={img.id}
-              className={`relative group rounded-xl overflow-hidden border-2 transition-all ${
-                selectedImages.includes(img.id) ? "border-orange-500" : "border-transparent"
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => { setActiveFilter("all"); setActiveFilterValue(undefined); fetchGallery(); }}
+            className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${activeFilter === "all"
+                ? "bg-orange-500 text-white"
+                : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
               }`}
-            >
-              <div className="aspect-square bg-slate-100">
-                <img
-                  src={getImageSrc(img.image)}
-                  alt={img.title}
-                  className="h-full w-full object-cover"
-                />
-              </div>
-              
-              <button
-                onClick={() => toggleSelect(img.id)}
-                className={`absolute top-2 left-2 flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all ${
-                  selectedImages.includes(img.id)
-                    ? "bg-orange-500 border-orange-500 text-white"
-                    : "border-white bg-white/80 text-transparent hover:border-orange-500"
-                }`}
-              >
-                <FaCheck size={12} />
-              </button>
+          >
+            All
+          </button>
+          <button
+            onClick={() => { setActiveFilter("active"); setActiveFilterValue(true); fetchGallery(true); }}
+            className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${activeFilter === "active"
+                ? "bg-orange-500 text-white"
+                : "border border-slate-200 bg-white text-slate-600 hover:bg-green-50"
+              }`}
+          >
+            Active
+          </button>
+          <button
+            onClick={() => { setActiveFilter("inactive"); setActiveFilterValue(false); fetchGallery(false); }}
+            className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${activeFilter === "inactive"
+                ? "bg-orange-500 text-white"
+                : "border border-slate-200 bg-white text-slate-600 hover:bg-red-50"
+              }`}
+          >
+            Inactive
+          </button>
+        </div>
+        <input
+          type="text"
+          placeholder="Search by alt text or mood..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="ml-auto rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none w-full sm:w-64"
+        />
+      </div>
 
-              <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                  onClick={() => addTag(img.id)}
-                  className="rounded-full bg-white p-2 text-slate-600 shadow hover:text-orange-500"
-                  title="Add Tag"
-                >
-                  <FaTag size={12} />
-                </button>
-                <button
-                  onClick={() => deleteImage(img.id)}
-                  className="rounded-full bg-white p-2 text-slate-600 shadow hover:text-red-500"
-                  title="Delete"
-                >
-                  <FaTrash size={12} />
-                </button>
-              </div>
+      {error && (
+        <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+          {error}
+        </div>
+      )}
 
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3 translate-y-full group-hover:translate-y-0 transition-transform">
-                <p className="text-sm font-medium text-white truncate">{img.title}</p>
-                <p className="text-xs text-white/70 truncate">{img.location}</p>
-                {img.tags?.length > 0 && (
-                  <div className="mt-1 flex flex-wrap gap-1">
-                    {img.tags.slice(0, 3).map(tag => (
-                      <span key={tag} className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] text-white">
-                        {tag}
+      {filteredItems.length === 0 ? (
+        <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
+          <FaImages className="mx-auto mb-3 text-3xl text-slate-300" />
+          No gallery images yet. Add one to get started.
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 gap-4 md:hidden">
+            {filteredItems.map((item) => (
+              <div key={item._id} className="rounded-xl border border-slate-200 bg-white p-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-slate-100">
+                    <img
+                      src={item.url}
+                      alt={item.alt}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-slate-800 truncate">{item.alt}</p>
+                    <p className="text-xs text-slate-400 truncate">Mood: {item.moodName}</p>
+                    <p className="text-xs text-slate-400">Order: {item.order}</p>
+                  </div>
+                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${item.isActive ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-600"
+                    }`}>
+                    {item.isActive ? "Active" : "Inactive"}
+                  </span>
+                </div>
+                <div className="mt-3 flex items-center justify-end gap-2 border-t border-slate-100 pt-3">
+                  <button onClick={() => openModal(item)} className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-500 hover:bg-orange-50 hover:text-orange-500 transition">
+                    <FaEdit size={12} /> Edit
+                  </button>
+                  <button onClick={() => toggleStatus(item._id, item.isActive)} className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition ${item.isActive ? "text-green-600 hover:bg-green-50" : "text-slate-500 hover:bg-slate-100"
+                    }`}>
+                    {item.isActive ? <FaToggleOn size={14} /> : <FaToggleOff size={14} />}
+                    {item.isActive ? "Active" : "Inactive"}
+                  </button>
+                  <button onClick={() => handleDelete(item._id)} className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-50 transition">
+                    <FaTrash size={12} /> Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-200 bg-white">
+            <table className="w-full">
+              <thead className="bg-slate-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">Image</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">Alt Text</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">Mood</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">Order</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">Status</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase text-slate-500">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredItems.map((item) => (
+                  <tr key={item._id} className="hover:bg-slate-50">
+                    <td className="px-4 py-3">
+                      <div className="h-12 w-12 overflow-hidden rounded-lg bg-slate-100">
+                        <img src={item.url} alt={item.alt} className="h-full w-full object-cover" />
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-sm font-medium text-slate-800 max-w-[200px] truncate">{item.alt}</td>
+                    <td className="px-4 py-3 text-sm text-slate-500">{item.moodName}</td>
+                    <td className="px-4 py-3 text-sm text-slate-500">{item.order}</td>
+                    <td className="px-4 py-3">
+                      <span className={`rounded-full px-2 py-1 text-xs font-medium ${item.isActive ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-600"
+                        }`}>
+                        {item.isActive ? "Active" : "Inactive"}
                       </span>
-                    ))}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <button onClick={() => openModal(item)} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-orange-500"><FaEdit size={14} /></button>
+                        <button onClick={() => toggleStatus(item._id, item.isActive)} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-green-500">
+                          {item.isActive ? <FaToggleOn size={18} /> : <FaToggleOff size={18} />}
+                        </button>
+                        <button onClick={() => handleDelete(item._id)} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-red-500"><FaTrash size={14} /></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-2xl rounded-xl bg-white p-6 max-h-[90vh] overflow-y-auto">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-slate-800">
+                {editingId ? "Edit Gallery Image" : "Add Gallery Images"}
+              </h3>
+              <button onClick={closeModal} className="text-slate-400 hover:text-slate-600">
+                <FaTimes />
+              </button>
+            </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-600">
+                  Images {!editingId && "*"}
+                </label>
+                <div
+                  onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("border-orange-500", "bg-orange-50"); }}
+                  onDragLeave={(e) => { e.preventDefault(); e.currentTarget.classList.remove("border-orange-500", "bg-orange-50"); }}
+                  onDrop={(e) => { e.preventDefault(); e.currentTarget.classList.remove("border-orange-500", "bg-orange-50"); handleFiles(e.dataTransfer.files); }}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed border-slate-300 p-6 text-center hover:border-orange-500 transition-colors"
+                >
+                  {formData.previewUrl ? (
+                    <img src={formData.previewUrl} alt="Preview" className="h-32 w-full object-cover rounded-lg" />
+                  ) : formData.images.length > 0 ? (
+                    <>
+                      <FaUpload className="text-2xl text-orange-500" />
+                      <p className="text-sm font-medium text-slate-700">Drop more images or click to add</p>
+                      <p className="text-xs text-slate-400">{formData.images.length} file(s) selected</p>
+                    </>
+                  ) : (
+                    <>
+                      <FaUpload className="text-2xl text-slate-400" />
+                      <p className="text-sm text-slate-500">Drag and drop images here, or click to browse</p>
+                      <p className="text-xs text-slate-400">Supports JPEG, PNG, WebP</p>
+                    </>
+                  )}
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  onChange={handleImageChange}
+                  className="hidden"
+                />
+                {formData.images.length > 0 && !editingId && (
+                  <div className="mt-3">
+                    <p className="mb-2 text-xs font-medium text-slate-500">PREVIEW ({formData.images.length} files)</p>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                      {formData.images.map((item, index) => (
+                        <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-slate-200 group">
+                          <img src={item.preview} alt="Preview" className="h-full w-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => removeFromQueue(index)}
+                            className="absolute top-1 right-1 rounded-full bg-red-500 p-1 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <FaTimes size={10} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
-            </div>
-          ))
-        )}
-      </div>
-
-      <div className="mt-4 text-sm text-slate-500">
-        {filteredImages.length} images • {selectedImages.length} selected
-      </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-600">
+                  Mood *
+                </label>
+                <select
+                  required
+                  value={formData.moodId}
+                  onChange={(e) => setFormData({ ...formData, moodId: e.target.value })}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none"
+                >
+                  <option value="">Select a mood</option>
+                  {moods.map((mood) => (
+                    <option key={mood._id} value={mood._id}>
+                      {mood.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-600">
+                  Order
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={formData.order}
+                  onChange={(e) => setFormData({ ...formData, order: e.target.value })}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none"
+                  placeholder="0"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600"
+                >
+                  {editingId ? "Update" : "Add"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

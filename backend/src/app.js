@@ -9,6 +9,7 @@ import durationRouter from "./routes/duration.routes.js";
 import galleryRouter from "./routes/gallery.routes.js";
 import blogCategoryRouter from "./routes/blogCategory.routes.js";
 import blogRouter from "./routes/Blog.routes.js";
+import testimonialRouter from "./routes/testimonial.routes.js";
 import cookie from "cookie-parser";
 import cors from "cors";
 const app = express();
@@ -35,6 +36,7 @@ app.use("/api/duration", durationRouter);
 app.use("/api/gallery", galleryRouter);
 app.use("/api/blogCategory", blogCategoryRouter);
 app.use("/api/blog", blogRouter);
+app.use("/api/testimonial", testimonialRouter);
 
 import multer from "multer";
 import { get } from "mongoose";

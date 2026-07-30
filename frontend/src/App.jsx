@@ -96,6 +96,7 @@ const AdminApp = () => (
       <Route path="tours/new" element={<AdminAddTourPage />} />
       <Route path="blog" element={<AdminBlogPage />} />
       <Route path="blog/new" element={<AdminAddBlogPage />} />
+      <Route path="blog/edit/:id" element={<AdminAddBlogPage />} />
       <Route path="testimonials" element={<AdminTestimonialsPage />} />
       <Route path="categories" element={<AdminCategoriesPage />} />
       <Route path="gallery" element={<AdminGalleryPage />} />

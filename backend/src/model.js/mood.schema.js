@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-
 const moodSchema = new mongoose.Schema(
   {
     name: {
@@ -23,16 +22,16 @@ const moodSchema = new mongoose.Schema(
       url: {
         type: String,
         required: [true, "moodImage is required"],
-        
+        trim: true
       },
       fileId: {
         type: String,
-        required: [true, "Cover image file ID is required"],
+        required: [true, "mood image file ID is required"],
         trim: true,
       },
       alt: {
         type: String,
-        required: [true, "Cover image alt text is required"],
+        required: [true, "mood image alt text is required"],
         trim: true,
       },
     },

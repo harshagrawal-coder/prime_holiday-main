@@ -50,7 +50,7 @@ const Bookings = lazy(() => import("./user/pages/Bookings"));
 const SavedTrips = lazy(() => import("./user/pages/SavedTrips"));
 const Profile = lazy(() => import("./user/pages/Profile"));
 
-const ReservePage = lazy(() => import("./pages/ReservePage"));
+const BookingPage = lazy(() => import("./pages/BookingPage"));
 
 // User Auth (standalone, no layout)
 const UserLoginPage = lazy(() => import("./user/pages/Login"));
@@ -69,7 +69,7 @@ const PublicApp = () => (
       <Route path="/tours" element={<TourPage />} />
       <Route path="/tour/:slug" element={<TourDetailsPage />} />
       <Route path="/tours/:id" element={<TourDetailsPage />} />
-      <Route path="/reserve" element={<ReservePage />} />
+      <Route path="/reserve" element={<BookingPage />} />
       <Route path="/gallery" element={<GalleryPage />} />
     </Routes>
   </MainLayout>

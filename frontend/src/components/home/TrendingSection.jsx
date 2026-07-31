@@ -11,7 +11,6 @@ const getCardsPerView = (width) => {
   if (width >= 640) return 2;
   return 1;
 };
-
 const TrendingSection = () => {
   const navigate = useNavigate();
   const [trendingTours, setTrendingTours] = useState([]);

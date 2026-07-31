@@ -83,7 +83,7 @@ const PricingCard = ({ tour, navigate }) => {
 
       <div className="mt-6 flex flex-col gap-3">
         <button
-          onClick={() => navigate(`/reserve?tourId=${tour._id || tour.id}`)}
+          onClick={() => navigate(`/reserve?tourId=${tour._id || tour.id}`, { state: { tour } })}
           className="flex items-center justify-center rounded-full bg-orange-500 px-5 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-white transition-all duration-300 hover:bg-orange-600 cursor-pointer"
         >
           Reserve Now
@@ -538,7 +538,7 @@ const TourDetail = ({ tour, relatedTours }) => {
           </p>
         </div>
         <button
-          onClick={() => navigate(`/reserve?tourId=${tour._id || tour.id}`)}
+          onClick={() => navigate(`/reserve?tourId=${tour._id || tour.id}`, { state: { tour } })}
           className="flex items-center justify-center rounded-full bg-orange-500 px-6 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-white shadow-lg transition-all duration-300 hover:bg-orange-600 cursor-pointer shrink-0"
         >
           Reserve Now

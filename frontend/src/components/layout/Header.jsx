@@ -19,6 +19,8 @@ const Header = () => {
     location.pathname.startsWith("/admin") ||
     location.pathname.startsWith("/dashboard");
 
+  const isReserve = location.pathname.startsWith("/reserve");
+
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "unset";
     return () => {
@@ -30,7 +32,11 @@ const Header = () => {
       <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8">
         <div className="flex h-20 items-center justify-between md:h-28">
           <Link to="/" className="relative z-[1100]">
-            <h1 className="font-primary text-base font-bold uppercase tracking-[0.2em] text-white drop-shadow-lg sm:text-xl md:text-2xl dark:text-white dark:drop-shadow-none">
+            <h1 className={`font-primary text-base font-bold uppercase tracking-[0.2em] sm:text-xl md:text-2xl ${
+              isReserve
+                ? "text-slate-900 dark:text-white"
+                : "text-white drop-shadow-lg dark:text-white dark:drop-shadow-none"
+            }`}>
               Prime <span className="text-orange-500">Holiday</span>
             </h1>
           </Link>
@@ -43,7 +49,9 @@ const Header = () => {
                 className={`font-primary text-[10px] font-bold uppercase tracking-[0.2em] transition-all hover:text-orange-500 xl:text-xs ${
                   location.pathname === link.path
                     ? "text-orange-500"
-                    : "text-white dark:text-slate-200"
+                    : isReserve
+                      ? "text-slate-800 dark:text-slate-200"
+                      : "text-white dark:text-slate-200"
                 }`}
               >
                 {link.name}
@@ -55,7 +63,9 @@ const Header = () => {
               className={`inline-flex items-center rounded-full border px-5 py-2.5 font-primary text-[10px] font-bold uppercase tracking-[0.2em] transition-all duration-300 hover:-translate-y-0.5 hover:border-orange-500 hover:bg-orange-500 hover:text-white xl:text-xs ${
                 isAccountActive
                   ? "border-orange-500 bg-orange-500 text-white shadow-lg shadow-orange-500/30"
-                  : "border-white/30 bg-white/10 text-white backdrop-blur-md"
+                  : isReserve
+                    ? "border-slate-200 bg-white text-slate-800 shadow-sm"
+                    : "border-white/30 bg-white/10 text-white backdrop-blur-md"
               }`}
             >
               Sign In
@@ -65,7 +75,7 @@ const Header = () => {
           <button
             onClick={() => setIsOpen((open) => !open)}
             className={`z-[1100] p-2 transition-colors duration-300 lg:hidden ${
-              isOpen ? "text-black" : "text-white"
+              isOpen ? "text-black" : isReserve ? "text-slate-900" : "text-white"
             }`}
           >
             {isOpen ? <X size={28} /> : <Menu size={28} />}

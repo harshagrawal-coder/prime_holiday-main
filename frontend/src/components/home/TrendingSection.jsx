@@ -67,7 +67,7 @@ const TrendingSection = () => {
     : 0;
 
   return (
-    <section className="mx-auto max-w-[1440px] overflow-x-clip bg-white px-4 py-16 sm:px-6 sm:py-24">
+    <section className="mx-auto max-w-[1440px] overflow-x-clip bg-white px-4 py-16 sm:px-6 sm:py-4">
       <div className="mb-10 flex flex-col gap-6 sm:mb-16 md:flex-row md:items-end md:justify-between">
         <div>
           <div className="mb-3 flex items-center gap-2">

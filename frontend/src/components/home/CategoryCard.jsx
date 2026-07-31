@@ -4,7 +4,6 @@ import LazyImage from "../ui/LazyImage";
 
 const CategoryCard = ({ title, image, queryCategory }) => {
   const navigate = useNavigate();
-
   return (
     <article
       onClick={() => navigate(`/tours?category=${queryCategory}`)}

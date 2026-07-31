@@ -1,8 +1,22 @@
 import Mood from "../model.js/mood.schema.js";
 import slugify from "slugify";
+import { uploadFile, deleteFile } from "../services/imagekit.js";
 export async function createMood(req, res) {
   const { name, isActive } = req.body;
+  let uploadedFileId = null
   try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "image is not found"
+      })
+    }
+    if (!name?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Mood name is required.",
+      });
+    }
     const slug = slugify(name, {
       lower: true,
       strict: true,
@@ -15,10 +29,21 @@ export async function createMood(req, res) {
         message: "mood already exists",
       });
     }
+    const uploadedImage = await uploadFile({
+      file: req.file.buffer,
+      fileName: req.file.originalname,
+      folder: "/moods"
+    })
+    uploadedFileId = uploadedImage.fileId
     const mood = await Mood.create({
       name,
       slug,
       isActive,
+      moodImage: {
+        url: uploadedImage.url,
+        fileId: uploadedImage.fileId,
+        alt: name,
+      }
     });
     return res.status(201).json({
       success: true,
@@ -26,17 +51,22 @@ export async function createMood(req, res) {
       mood,
     });
   } catch (error) {
+    if (uploadedFileId) {
+      try {
+        await deleteFile(uploadedFileId);
+      } catch (err) {
+        console.error("Failed to delete uploaded image:", err);
+      }
+    }
     return res.status(500).json({
       success: false,
       message: error.message,
     });
   }
 }
-
 export async function getAllMood(req, res) {
   try {
     const query = {};
-
     if (req.query.isActive !== undefined) {
       query.isActive = req.query.isActive === "true";
     }
@@ -80,16 +110,13 @@ export async function getMoodById(req, res) {
 export async function updateMood(req, res) {
   try {
     const { name, isActive } = req.body;
-
     const mood = await Mood.findById(req.params.id);
-
     if (!mood) {
       return res.status(404).json({
         success: false,
         message: "Mood not found",
       });
     }
-
     const slug = slugify(name, {
       lower: true,
       strict: true,
@@ -107,16 +134,32 @@ export async function updateMood(req, res) {
         message: "Mood already exists",
       });
     }
-
+    const oldFileId = mood.moodImage?.fileId;
     mood.name = name;
     mood.slug = slug;
-
     if (typeof isActive === "boolean") {
       mood.isActive = isActive;
     }
-
+    if (req.file) {
+      const uploadedImage = await uploadFile({
+        file: req.file.buffer,
+        fileName: req.file.originalname,
+        folder: "/moods",
+      });
+      mood.moodImage = {
+        url: uploadedImage.url,
+        fileId: uploadedImage.fileId,
+        alt: name,
+      };
+    }
     await mood.save();
-
+    if (req.file && oldFileId) {
+      try {
+        await deleteFile(oldFileId);
+      } catch (error) {
+        console.error("Failed to delete old image:", error)
+      }
+    }
     return res.status(200).json({
       success: true,
       message: "Mood updated successfully",
@@ -129,6 +172,8 @@ export async function updateMood(req, res) {
     });
   }
 }
+
+
 export async function deleteMood(req, res) {
   try {
     const mood = await Mood.findByIdAndDelete(req.params.id);
@@ -175,7 +220,8 @@ export async function updateMoodStatus(req, res) {
       message: "mood status updated successfully",
       mood,
     });
-  } catch (error) {
+  }
+  catch (error) {
     return res.status(500).json({
       success: false,
       message: error.message,

@@ -13,35 +13,64 @@ const Moods = () => {
   const [items, setItems] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [formData, setFormData] = useState({ name: "" });
+  const [formData, setFormData] = useState({ name: "", image: null });
+  const [imagePreview, setImagePreview] = useState("");
   const [error, setError] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!editingId && !formData.image) {
+      setError("Please upload a mood image.");
+      return;
+    }
     let url = editingId ? `${API_URI}/mood/${editingId}` : `${API_URI}/mood`;
     let method = editingId ? "put" : "post";
     const token = localStorage.getItem("token");
-    const response = await fetch(url, {
-      method,
-      headers: {
-        "Content-Type": "Application/json",
-        authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(formData),
-    });
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.message || "mood not fetched");
+    const payload = new FormData();
+    payload.append("name", formData.name);
+    if (formData.image) {
+      payload.append("image", formData.image);
     }
-    if (editingId) {
-      setItems((prev) =>
-        prev.map((item) => (item._id === editingId ? data.mood : item)),
-      );
-    } else {
-      setItems((prev) => [data.mood, ...prev]);
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: {
+          authorization: `Bearer ${token}`,
+        },
+        body: payload,
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "mood not fetched");
+      }
+      if (editingId) {
+        setItems((prev) =>
+          prev.map((item) => (item._id === editingId ? data.mood : item)),
+        );
+      } else {
+        setItems((prev) => [data.mood, ...prev]);
+      }
+      closeModal();
+    } catch (error) {
+      setError(error.message);
     }
-    closeModal();
+  };
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (!validTypes.includes(file.type)) {
+      setError("Please select a valid image (JPG, PNG, WEBP)");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setError("Image must be less than 10MB");
+      return;
+    }
+    setFormData((prev) => ({ ...prev, image: file }));
+    setImagePreview(URL.createObjectURL(file));
+    setError("");
   };
   const fetchMoods = async (isActive) => {
     const token = localStorage.getItem("token");
@@ -117,10 +146,12 @@ const Moods = () => {
   const openModal = (item = null) => {
     if (item) {
       setEditingId(item._id);
-      setFormData({ name: item.name });
+      setFormData({ name: item.name, image: null });
+      setImagePreview(item.moodImage?.url || "");
     } else {
       setEditingId(null);
-      setFormData({ name: "" });
+      setFormData({ name: "", image: null });
+      setImagePreview("");
     }
     setShowModal(true);
   };
@@ -128,6 +159,8 @@ const Moods = () => {
   const closeModal = () => {
     setShowModal(false);
     setEditingId(null);
+    setImagePreview("");
+    setError("");
   };
   return (
     <div className="p-6">
@@ -198,9 +231,13 @@ const Moods = () => {
             {items.map((item) => (
               <div key={item._id} className="rounded-xl border border-slate-200 bg-white p-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100 text-violet-600">
-                    <FaSmile size={16} />
-                  </div>
+                  {item.moodImage?.url ? (
+                    <img src={item.moodImage.url} alt={item.name} className="h-10 w-10 rounded-xl object-cover" />
+                  ) : (
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100 text-violet-600">
+                      <FaSmile size={16} />
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-slate-800 truncate">{item.name}</p>
                     <p className="text-xs text-slate-400 truncate">{item.slug}</p>
@@ -240,9 +277,13 @@ const Moods = () => {
                   <tr key={item._id} className="hover:bg-slate-50">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-100 text-violet-600">
-                          <FaSmile size={14} />
-                        </div>
+                        {item.moodImage?.url ? (
+                          <img src={item.moodImage.url} alt={item.name} className="h-9 w-9 rounded-lg object-cover" />
+                        ) : (
+                          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-100 text-violet-600">
+                            <FaSmile size={14} />
+                          </div>
+                        )}
                         <span className="text-sm font-medium text-slate-800">{item.name}</span>
                       </div>
                     </td>
@@ -299,6 +340,30 @@ const Moods = () => {
                   placeholder="Adventure"
                 />
               </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-600">
+                  Mood Image {editingId ? "" : "*"}
+                </label>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  onChange={handleImageChange}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-orange-50 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-orange-600 hover:file:bg-orange-100"
+                />
+                <p className="mt-1 text-[11px] text-slate-400">
+                  {editingId ? "Leave empty to keep the current image." : "JPG, PNG or WEBP up to 10MB."}
+                </p>
+                {imagePreview ? (
+                  <div className="mt-3 overflow-hidden rounded-xl border border-slate-200">
+                    <img src={imagePreview} alt="Mood preview" className="h-32 w-full object-cover" />
+                  </div>
+                ) : null}
+              </div>
+              {error ? (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
+                  {error}
+                </div>
+              ) : null}
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"

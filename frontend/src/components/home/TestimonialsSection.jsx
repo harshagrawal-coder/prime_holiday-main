@@ -1,10 +1,33 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { FaArrowLeft, FaArrowRight, FaCheckCircle } from "react-icons/fa";
-import { testimonials } from "../../data/testimonials";
 import { useTestimonialSlider } from "../../hooks/useTestimonialSlider";
 import TestimonialCard from "./TestimonialCard";
+import axios from "axios";
+import { API_URI } from "../../config/config";
 
 const TestimonialsSection = () => {
+  const [testimonials, setTestimonials] = useState([]);
+
+  useEffect(() => {
+    const fetchTestimonials = async () => {
+      try {
+        const response = await axios.get(`${API_URI}/testimonial`);
+        const data = (response.data.testimonials || []).map((item) => ({
+          name: item.name,
+          location: item.location,
+          text: item.text,
+          rating: item.rating || 5,
+          image: item.image?.url || "https://i.pravatar.cc/160?img=12",
+        }));
+        setTestimonials(data);
+      } catch (error) {
+        console.error("Failed to fetch testimonials", error);
+      }
+    };
+    fetchTestimonials();
+  }, []);
+
   const {
     index,
     setIndex,
@@ -18,6 +41,8 @@ const TestimonialsSection = () => {
     trackRef,
     translateX,
   } = useTestimonialSlider(testimonials.length);
+
+  if (testimonials.length === 0) return null;
 
   return (
     <section id="testimonials" className="relative overflow-hidden py-16 md:py-24">

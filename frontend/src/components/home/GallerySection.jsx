@@ -9,7 +9,6 @@ const GallerySection = () => {
   const [homeGalleryImages, setHomeGalleryImages] = useState([])
   const fetchGalleryImages = async () => {
     const response = await axios.get(`${API_URI}/gallery`)
-    console.log(response.data)
     setHomeGalleryImages(response.data.data)
   }
   useEffect(()=>{

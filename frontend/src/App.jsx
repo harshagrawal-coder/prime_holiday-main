@@ -67,7 +67,7 @@ const PublicApp = () => (
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/tour" element={<TourPage />} />
       <Route path="/tours" element={<TourPage />} />
-      <Route path="/tour/:id" element={<TourDetailsPage />} />
+      <Route path="/tour/:slug" element={<TourDetailsPage />} />
       <Route path="/tours/:id" element={<TourDetailsPage />} />
       <Route path="/reserve" element={<ReservePage />} />
       <Route path="/gallery" element={<GalleryPage />} />

@@ -1,7 +1,6 @@
 import { body, validationResult } from "express-validator";
 const validateRequest = (req, res, next) => {
   const errors = validationResult(req);
-
   if (!errors.isEmpty()) {
     return res.status(400).json({
       success: false,
@@ -21,10 +20,21 @@ export const validateCreateGallery = [
 
   body("order")
     .optional()
-    .isInt({
-      min: 0,
-    })
+    .isInt({ min: 0 })
     .withMessage("Order must be a positive whole number"),
+
+  body("title")
+    .optional()
+    .trim()
+    .notEmpty()
+    .withMessage("Title cannot be empty"),
+
+  body("location")
+    .optional()
+    .trim()
+    .notEmpty()
+    .withMessage("Location cannot be empty"),
+
   validateRequest,
 ];
 
@@ -40,6 +50,23 @@ export const validateUpdateGallery = [
     .optional()
     .isBoolean()
     .withMessage("isActive must be true or false"),
+
+  body("featured")
+    .optional()
+    .isBoolean()
+    .withMessage("featured must be true or false"),
+
+  body("title")
+    .optional()
+    .trim()
+    .notEmpty()
+    .withMessage("Title cannot be empty"),
+
+  body("location")
+    .optional()
+    .trim()
+    .notEmpty()
+    .withMessage("Location cannot be empty"),
 
   validateRequest,
 ];

@@ -13,7 +13,6 @@ const TourCard = ({ tour, isHome = false }) => {
   const cityName = tour.cityName || tour.city;
   const stateName = tour.stateName || tour.state;
   const overview = tour.overview || tour.prec;
-  const linkTo = tour.slug ? `/tours/${tour.slug}` : `/tours/${tour.id}`;
   const price = tour.price ?? undefined;
   const discountPrice = tour.discountPrice ?? undefined;
   const priceDisplay = price !== undefined
@@ -22,7 +21,7 @@ const TourCard = ({ tour, isHome = false }) => {
 
   return (
     <Link
-      to={linkTo}
+      to={`/tour/${tour.slug}`}
       className="group block h-full overflow-hidden rounded-[1.75rem] border border-white/80 bg-white/95 shadow-[0_12px_40px_rgba(15,23,42,0.06)] transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_22px_50px_rgba(15,23,42,0.12)]"
     >
       <div className={`relative overflow-hidden ${imageHeight}`}>
@@ -92,6 +91,7 @@ const TourCard = ({ tour, isHome = false }) => {
             View Details
             <FaArrowRight className="transition-transform duration-300 group-hover:translate-x-1" />
           </span>
+
         </div>
       </div>
     </Link>

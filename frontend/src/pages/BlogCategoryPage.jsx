@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
 import BlogGrid from "../components/blog/BlogGrid";
@@ -6,7 +6,9 @@ import BlogSidebar from "../components/blog/BlogSidebar";
 import FeaturedPost from "../components/blog/FeaturedPost";
 import SearchBar from "../components/blog/SearchBar";
 import LazyImage from "../components/ui/LazyImage";
-import { blogPosts, slugToCategory, blogCategories } from "../data/blogPosts";
+import { buildCategoryOptions, mapBlog } from "../utils/blogUtils";
+import axios from "axios";
+import { API_URI } from "../config/config";
 
 const categoryHeroImages = {
   Adventure:
@@ -32,39 +34,80 @@ const categoryDescriptions = {
 const INITIAL_VISIBLE = 6;
 
 const BlogCategoryPage = () => {
-  
   const { categorySlug } = useParams();
-  const categoryName = slugToCategory[categorySlug];
-
+  const [blogPosts, setBlogPosts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
+
+  const mappedPosts = useMemo(() => blogPosts.map(mapBlog), [blogPosts]);
+
+  const categoryOptions = useMemo(
+    () => [{ name: "All", slug: "" }, ...buildCategoryOptions(categories, mappedPosts)],
+    [categories, mappedPosts]
+  );
+
+  const activeCategory = useMemo(
+    () => categoryOptions.find((category) => category.slug === categorySlug),
+    [categoryOptions, categorySlug]
+  );
+  const categoryName = activeCategory?.name || "";
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [blogRes, catRes] = await Promise.all([
+          axios.get(`${API_URI}/blog`),
+          axios.get(`${API_URI}/blogCategory`),
+        ]);
+        setBlogPosts(blogRes.data.data || []);
+        setCategories(catRes.data.data || []);
+      } catch (error) {
+        console.log(error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const heroImage = categoryHeroImages[categoryName] || categoryHeroImages["Travel Tips"];
   const description = categoryDescriptions[categoryName] || "Explore stories in this category.";
 
   const filteredPosts = useMemo(() => {
-    if (!categoryName) return [];
-    return blogPosts.filter((post) => {
-      const matchesCategory = post.category === categoryName;
+    if (!categorySlug) return [];
+    return mappedPosts.filter((post) => {
+      const matchesCategory = post.categorySlug === categorySlug;
       const haystack = `${post.title} ${post.excerpt} ${post.category}`.toLowerCase();
       const matchesSearch = haystack.includes(searchTerm.trim().toLowerCase());
       return matchesCategory && matchesSearch;
     });
-  }, [categoryName, searchTerm]);
+  }, [categorySlug, searchTerm, mappedPosts]);
 
   const featuredPost = useMemo(
     () => filteredPosts.find((post) => post.featured) ?? filteredPosts[0],
-    [filteredPosts],
+    [filteredPosts]
   );
 
   const visiblePosts = filteredPosts
-    .filter((post) => post.id !== featuredPost?.id)
+    .filter((post) => post._id !== featuredPost?._id)
     .slice(0, visibleCount);
 
-  const popularPosts = [...blogPosts].sort((a, b) => b.progress - a.progress).slice(0, 4);
-  const hasMore = filteredPosts.filter((post) => post.id !== featuredPost?.id).length > visibleCount;
+  const popularPosts = [...mappedPosts]
+    .sort((a, b) => b.dateValue - a.dateValue)
+    .slice(0, 4);
+  const hasMore = filteredPosts.filter((post) => post._id !== featuredPost?._id).length > visibleCount;
 
-  if (!categoryName) {
+  if (loading) {
+    return (
+      <section className="mx-auto max-w-4xl px-4 py-28 text-center sm:px-6">
+        <p className="text-[11px] font-black uppercase tracking-[0.3em] text-orange-500">Loading Stories</p>
+      </section>
+    );
+  }
+
+  if (!activeCategory || !categoryName) {
     return (
       <section className="mx-auto max-w-4xl px-4 py-28 text-center sm:px-6">
         <p className="text-[11px] font-black uppercase tracking-[0.3em] text-orange-500">
@@ -165,7 +208,7 @@ const BlogCategoryPage = () => {
 
             <BlogSidebar
               popularPosts={popularPosts}
-              categories={blogCategories}
+              categories={categoryOptions}
               activeCategory={categoryName}
               onCategoryChange={() => {}}
             />

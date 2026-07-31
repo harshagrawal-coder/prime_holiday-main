@@ -6,30 +6,32 @@ const gallerySchema = new mongoose.Schema(
       required: [true, "Gallery image URL is required"],
       trim: true,
     },
-
     fileId: {
       type: String,
       required: [true, "Image file ID is required"],
       trim: true,
     },
+    title: {
+      type: String,
+      required: [true, "Image title is required"],
+      trim: true,
+      maxlength: [150, "Title cannot exceed 150 characters"],
+    },
+    location: {
+      type: String,
+      required: [true, "Image location is required"],
+      trim: true,
+    },
     alt: {
       type: String,
-      required: [true, "Image alt text is required"],
       trim: true,
-      maxlength: [
-        150,
-        "Alt text cannot exceed 150 characters",
-      ],
+      default: "",
     },
     moodId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Mood",
-      required: [
-        true,
-        "Gallery mood is required",
-      ],
+      required: [true, "Gallery mood is required"],
     },
-
     moodName: {
       type: String,
       required: true,
@@ -39,22 +41,18 @@ const gallerySchema = new mongoose.Schema(
     order: {
       type: Number,
       default: 0,
-      min: [
-        0,
-        "Order cannot be negative",
-      ],
+      min: [0, "Order cannot be negative"],
+    },
+    featured: {
+      type: Boolean,
+      default: false,
     },
     isActive: {
       type: Boolean,
       default: true,
     },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
-const Gallery = mongoose.model(
-  "Gallery",
-  gallerySchema
-);
+const Gallery = mongoose.model("Gallery", gallerySchema);
 export default Gallery;

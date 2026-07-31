@@ -40,7 +40,6 @@ export const useTourFilters = ({
       const matchVibe =
         selectedVibe === "All Vibes" ||
         tour.moodName?.toLowerCase() === selectedVibe.toLowerCase();
-
       const matchRegion =
         !selectedRegion ||
         tour.regionName?.toLowerCase() === selectedRegion.toLowerCase();

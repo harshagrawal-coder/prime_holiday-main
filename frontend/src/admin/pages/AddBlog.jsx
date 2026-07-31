@@ -10,6 +10,10 @@ const initialState = {
   readTime: "",
   excerpt: "",
   content: "",
+  featured: false,
+  popular: false,
+  isActive: true,
+  status: "published",
 };
 
 const inputClassName =
@@ -55,7 +59,11 @@ const AddBlog = () => {
         category: data.categoryId._id,
         author: data.authorName,
         excerpt: data.excerpt,
-        content: data.content
+        content: data.content,
+        featured: data.featured,
+        popular: data.popular,
+        isActive: data.isActive,
+        status: data.status || "published",
       })
       setImagePreview(
         data.coverImage.url
@@ -73,8 +81,11 @@ const AddBlog = () => {
 
   }, [id])
   const handleChange = (event) => {
-    const { name, value } = event.target;
-    setFormData((current) => ({ ...current, [name]: value }));
+    const { name, value, type, checked } = event.target;
+    setFormData((current) => ({
+      ...current,
+      [name]: type === "checkbox" ? checked : value,
+    }));
     setSubmitted(false);
     setUploadError("");
   };
@@ -151,6 +162,10 @@ const AddBlog = () => {
     data.append("excerpt", formData.excerpt)
     data.append("content", formData.content)
     // data.append("readTime", formData.readTime)
+    data.append("featured", formData.featured)
+    data.append("popular", formData.popular)
+    data.append("isActive", formData.isActive)
+    data.append("status", formData.status)
     if (imageFile) {
       data.append("image", imageFile)
     }
@@ -210,6 +225,10 @@ const AddBlog = () => {
             ))}
           </select>
           <input name="author" value={formData.author} onChange={handleChange} placeholder="Author" className={inputClassName} required />
+          <select name="status" value={formData.status} onChange={handleChange} className={inputClassName}>
+            <option value="draft">Draft</option>
+            <option value="published">Published</option>
+          </select>
           {/* <input name="readTime" value={formData.readTime} onChange={handleChange} placeholder="Read Time (e.g. 5 min read)" className={`${inputClassName} md:col-span-2`} /> */}
           <label className="flex flex-col gap-2 rounded-xl border border-dashed border-slate-300 bg-slate-50/70 px-4 py-3 text-sm text-slate-600 md:col-span-2">
             <span className="font-semibold text-slate-800">Upload blog image</span>
@@ -257,8 +276,35 @@ const AddBlog = () => {
             className={`${inputClassName} resize-none md:col-span-2`}
           />
 
+          <div className="space-y-4 rounded-2xl border border-slate-100 bg-slate-50/50 p-5 md:col-span-2">
+            <h3 className="text-sm font-black uppercase tracking-wider text-slate-700">Blog Flags</h3>
+            <div className="flex flex-wrap gap-6">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" name="featured" checked={formData.featured} onChange={handleChange} className="h-5 w-5 rounded border-slate-300 text-orange-500 focus:ring-orange-500" />
+                <div>
+                  <span className="text-sm font-semibold text-slate-800">Featured</span>
+                  <p className="text-xs text-slate-500">Show this blog in featured section</p>
+                </div>
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" name="popular" checked={formData.popular} onChange={handleChange} className="h-5 w-5 rounded border-slate-300 text-orange-500 focus:ring-orange-500" />
+                <div>
+                  <span className="text-sm font-semibold text-slate-800">Popular</span>
+                  <p className="text-xs text-slate-500">Mark this blog as popular</p>
+                </div>
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" name="isActive" checked={formData.isActive} onChange={handleChange} className="h-5 w-5 rounded border-slate-300 text-orange-500 focus:ring-orange-500" />
+                <div>
+                  <span className="text-sm font-semibold text-slate-800">Active</span>
+                  <p className="text-xs text-slate-500">Blog is visible on the website</p>
+                </div>
+              </label>
+            </div>
+          </div>
+
           <div className="md:col-span-2 flex items-center justify-between gap-4 pt-2">
-            <p className="text-sm text-slate-500">Blog post will be published.</p>
+            <p className="text-sm text-slate-500">Blog post will be saved.</p>
             <button
               disabled={isSubmitting}
               className="rounded-full bg-slate-950 px-6 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"

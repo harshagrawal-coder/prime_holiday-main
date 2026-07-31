@@ -35,5 +35,5 @@ galleryRouter.put(
   updateGallery,
 );
 
-galleryRouter.delete("/:id", deleteGallery);
+galleryRouter.delete("/:id", authenticate, isAdmin, deleteGallery);
 export default galleryRouter;

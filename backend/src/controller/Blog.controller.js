@@ -15,6 +15,7 @@ export async function createBlog(req, res) {
       featured,
       popular,
       status,
+      isActive,
     } = req.body;
     if (!req.file) {
       return res.status(400).json({
@@ -64,6 +65,10 @@ export async function createBlog(req, res) {
     const readingTime = Math.max(1, Math.ceil(wordCount / 200));
     const isFeatured = featured === true || featured === "true";
     const isPopular = popular === true || popular === "true";
+    const isActiveBool =
+      isActive === undefined
+        ? undefined
+        : isActive === true || isActive === "true";
     const blogStatus = status || "draft";
     if (!["draft", "published"].includes(blogStatus)) {
       return res.status(400).json({
@@ -98,6 +103,7 @@ export async function createBlog(req, res) {
       featured: isFeatured,
       popular: isPopular,
       status: blogStatus,
+      isActive: isActiveBool,
       publishedAt: blogStatus === "published" ? new Date() : null,
     });
     return res.status(201).json({
@@ -138,7 +144,6 @@ export async function getBlogs(req, res) {
 
     const query = {
       isActive: true,
-      status: "published",
     };
 
     // =====================================
@@ -280,7 +285,6 @@ export async function getBlogBySlug(req, res) {
     const blog = await Blog.findOne({
       slug,
       isActive: true,
-      status: "published",
     })
       .populate("categoryId", "name slug")
       .lean();
@@ -375,7 +379,6 @@ export async function getAdminBlogs(req, res) {
         },
       ];
     }
-
     const sortOptions = {
       newest: {
         createdAt: -1,

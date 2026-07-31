@@ -1,5 +1,5 @@
-import { FaChevronDown, FaClock, FaMapMarkerAlt, FaMountain } from "react-icons/fa";
-import TourDropdownField from "./TourDropdownField";
+import { FaClock, FaMapMarkerAlt, FaMountain, FaGlobeAsia } from "react-icons/fa";
+import CheckboxGroup from "./TourDropdownField";
 
 const TourFiltersContent = ({
   durations,
@@ -19,83 +19,64 @@ const TourFiltersContent = ({
   setSelectedVibe,
   priceRange,
   setPriceRange,
-  openDropdown,
-  setOpenDropdown,
 }) => (
-  <>
-    <TourDropdownField
-      label="01. Region"
-      id="region"
-      icon={<FaChevronDown />}
-      value={selectedRegion || "All Regions"}
+  <div className="space-y-6">
+    <CheckboxGroup
+      label="Region"
+      icon={FaGlobeAsia}
       options={regions}
-      onSelect={(region) => {
-        setSelectedRegion(region === "All Regions" ? "" : region);
+      selected={selectedRegion}
+      onChange={(val) => {
+        setSelectedRegion(val === selectedRegion ? "" : val);
         setSelectedStates([]);
         setSelectedCities([]);
       }}
-      openDropdown={openDropdown}
-      setOpenDropdown={setOpenDropdown}
+      single
     />
 
-    <TourDropdownField
-      label="02. State"
-      id="state"
-      icon={<FaChevronDown />}
-      value={selectedStates}
+    <CheckboxGroup
+      label="State"
+      icon={FaMapMarkerAlt}
       options={states}
-      onSelect={(state) =>
+      selected={selectedStates}
+      onChange={(val) =>
         setSelectedStates((prev) =>
-          prev.includes(state) ? prev.filter((item) => item !== state) : [...prev, state]
+          prev.includes(val) ? prev.filter((item) => item !== val) : [...prev, val]
         )
       }
-      multi={true}
-      openDropdown={openDropdown}
-      setOpenDropdown={setOpenDropdown}
     />
 
-    <TourDropdownField
-      label="03. City"
-      id="city"
-      icon={<FaMapMarkerAlt />}
-      value={selectedCities}
+    <CheckboxGroup
+      label="City"
+      icon={FaMapMarkerAlt}
       options={city}
-      onSelect={(city) =>
+      selected={selectedCities}
+      onChange={(val) =>
         setSelectedCities((prev) =>
-          prev.includes(city) ? prev.filter((item) => item !== city) : [...prev, city]
+          prev.includes(val) ? prev.filter((item) => item !== val) : [...prev, val]
         )
       }
-      multi={true}
-      openDropdown={openDropdown}
-      setOpenDropdown={setOpenDropdown}
     />
 
-    <TourDropdownField
-      label="04. Duration"
-      id="days"
-      icon={<FaClock />}
-      value={selectedDays}
+    <CheckboxGroup
+      label="Duration"
+      icon={FaClock}
       options={durations}
-      onSelect={(day) =>
+      selected={selectedDays}
+      onChange={(val) =>
         setSelectedDays((prev) =>
-          prev.includes(day)
-            ? prev.filter((item) => item !== day)
-            : [...prev, day]
+          prev.includes(val) ? prev.filter((item) => item !== val) : [...prev, val]
         )
       }
-      openDropdown={openDropdown}
-      setOpenDropdown={setOpenDropdown}
     />
 
-    <TourDropdownField
-      label="05. Experience"
-      id="mood"
-      icon={<FaMountain />}
-      value={selectedVibe}
+    <CheckboxGroup
+      label="Experience"
+      icon={FaMountain}
       options={moods}
-      onSelect={(mood) => setSelectedVibe(mood)}
-      openDropdown={openDropdown}
-      setOpenDropdown={setOpenDropdown}
+      selected={selectedVibe}
+      onChange={(val) => setSelectedVibe(selectedVibe === val ? "All Vibes" : val)}
+      single
     />
 
     <div className="space-y-4 pt-2">
@@ -113,7 +94,7 @@ const TourFiltersContent = ({
         className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-slate-100 accent-orange-600"
       />
     </div>
-  </>
+  </div>
 );
 
 export default TourFiltersContent;

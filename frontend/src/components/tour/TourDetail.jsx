@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { getStartingPrice, getPriceBadge, getSavings, formatPrice, getImageSrc } from "./tourUtils";
 import {
   FaArrowRight,
   FaCalendarAlt,
@@ -13,8 +14,6 @@ import {
 import LazyImage from "../ui/LazyImage";
 import TourCard from "./TourCard";
 import TourCTASection from "./TourCTASection";
-import { getStartingPrice, getPriceBadge, getSavings, getImageSrc, formatPrice } from "./tourUtils";
-
 const getHeroImage = (tour) => {
   if (tour.banner?.url) return tour.banner.url;
   if (tour.image?.startsWith?.("http")) return tour.image;
@@ -35,9 +34,8 @@ const statCards = (tour) => [
 const PricingCard = ({ tour, navigate }) => {
   const hasNewPrice = tour.price !== undefined;
   const savings = hasNewPrice ? getSavings(tour.price, tour.discountPrice) : null;
-
   return (
-    <div className="group relative overflow-hidden rounded-3xl border border-white/20 bg-white/10 backdrop-blur-lg p-6 shadow-2xl transition-all duration-300 hover:scale-[1.02]">
+    <div className="rounded-3xl border border-white/20 bg-white/10 backdrop-blur-lg p-6 shadow-2xl transition-all duration-300 hover:scale-[1.02] h-auto">
       <div className="flex items-start justify-between">
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.26em] text-white/60">Starting from</p>
@@ -103,7 +101,9 @@ const PricingCard = ({ tour, navigate }) => {
 
 const TourDetail = ({ tour, relatedTours }) => {
   const navigate = useNavigate();
-
+  if (!tour) {
+    return <h1>Loading...</h1>;
+  }
   const heroImage = getHeroImage(tour);
   const moodName = tour.moodName || tour.mood;
   const durationName = tour.durationName || tour.days;
@@ -111,6 +111,7 @@ const TourDetail = ({ tour, relatedTours }) => {
   const stateName = tour.stateName || tour.state;
   const overview = tour.overview || tour.prec;
   const hasNewPrice = tour.price !== undefined;
+
 
   return (
     <div className="bg-white text-slate-900">
@@ -129,7 +130,7 @@ const TourDetail = ({ tour, relatedTours }) => {
         </div>
 
         {/* Floating Pricing Card - Desktop */}
-        <div className="absolute right-10 top-26 z-[1010] hidden lg:block lg:w-[320px]">
+        <div className="absolute right-10 top-22 z-[1010] hidden lg:block lg:w-[320px]">
           <PricingCard tour={tour} navigate={navigate} />
         </div>
 
@@ -202,6 +203,50 @@ const TourDetail = ({ tour, relatedTours }) => {
                 ))}
               </div>
 
+              {/* Mobile Pricing - moved up */}
+              <div className="mt-8 lg:hidden">
+                <div className="rounded-[2rem] border border-slate-100 bg-white p-6 shadow-[0_16px_40px_rgba(15,23,42,0.06)] md:p-8">
+                  <p className="text-[11px] font-black uppercase tracking-[0.3em] text-orange-500">
+                    Pricing
+                  </p>
+                  <h3 className="mt-3 text-2xl font-black tracking-tight text-slate-900">
+                    {hasNewPrice ? getPriceBadge(tour.price, tour.discountPrice) : tour.priceRange || "Custom quote"}
+                  </h3>
+
+                  {hasNewPrice && (() => {
+                    const savings = getSavings(tour.price, tour.discountPrice);
+                    return savings ? (
+                      <div className="mt-3 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
+                        You save ₹{savings.amount.toLocaleString("en-IN")} ({savings.percent}% off)
+                      </div>
+                    ) : null;
+                  })()}
+
+                  <div className="mt-4 space-y-2">
+                    {hasNewPrice && (
+                      <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-2.5 text-sm">
+                        <span className="text-slate-500">Base Price</span>
+                        <span className="font-bold text-slate-900">{formatPrice(tour.price)}</span>
+                      </div>
+                    )}
+                    {hasNewPrice && tour.discountPrice > 0 && (
+                      <div className="flex items-center justify-between rounded-xl bg-emerald-50 px-4 py-2.5 text-sm">
+                        <span className="text-emerald-600">Discounted Price</span>
+                        <span className="font-bold text-emerald-700">{formatPrice(tour.discountPrice)}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-2.5 text-sm">
+                      <span className="text-slate-500">Duration</span>
+                      <span className="font-bold text-slate-900">{durationName}</span>
+                    </div>
+                    <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-2.5 text-sm">
+                      <span className="text-slate-500">Best Time</span>
+                      <span className="font-bold text-slate-900">{tour.bestTimeToVisit || "Year-round"}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Highlights Section (old format) */}
               {tour.topAttractions?.length > 0 && (
                 <div className="mt-12 rounded-[2rem] border border-slate-100 bg-slate-950 p-6 text-white shadow-[0_18px_45px_rgba(15,23,42,0.14)] md:p-8">
@@ -270,11 +315,11 @@ const TourDetail = ({ tour, relatedTours }) => {
                     <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-900 md:text-4xl">
                       Tour Highlights in Pictures
                     </h2>
-                    <div className="mt-6 grid gap-4 grid-cols-2 md:grid-cols-3">
+                    <div className="mt-6 flex gap-4 overflow-x-auto snap-x snap-mandatory hide-scrollbar">
                       {tour.gallery.map((img, i) => (
                         <div
                           key={i}
-                          className="group relative overflow-hidden rounded-2xl aspect-[4/3] cursor-pointer"
+                          className="group relative w-full md:w-[calc(33.333%-10.667px)] shrink-0 snap-start overflow-hidden rounded-2xl aspect-[4/3] cursor-pointer"
                           onClick={() => window.open(img.url || img, "_blank")}
                         >
                           <LazyImage
@@ -301,16 +346,19 @@ const TourDetail = ({ tour, relatedTours }) => {
                     <h3 className="mt-3 text-lg font-black tracking-tight text-slate-900">
                       What's Included
                     </h3>
-                    <ul className="mt-4 space-y-2.5">
+                    <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-3">
                       {tour.inclusions.map((item, i) => (
-                        <li key={i} className="flex items-start gap-3 text-sm text-slate-600">
-                          <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-                            <FaCheck size={9} />
-                          </span>
-                          {item}
-                        </li>
+                        <div
+                          key={i}
+                          className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/50 p-3"
+                        >
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500 text-white shadow-sm">
+                            <FaCheck size={13} />
+                          </div>
+                          <span className="text-sm leading-snug text-slate-600">{item}</span>
+                        </div>
                       ))}
-                    </ul>
+                    </div>
                   </div>
                 </div>
               )}
@@ -325,16 +373,19 @@ const TourDetail = ({ tour, relatedTours }) => {
                     <h3 className="mt-3 text-lg font-black tracking-tight text-slate-900">
                       What's Not Included
                     </h3>
-                    <ul className="mt-4 space-y-2.5">
+                    <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-3">
                       {tour.exclusions.map((item, i) => (
-                        <li key={i} className="flex items-start gap-3 text-sm text-slate-600">
-                          <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-400">
-                            <FaCheck size={9} className="rotate-45" />
-                          </span>
-                          {item}
-                        </li>
+                        <div
+                          key={i}
+                          className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/50 p-3"
+                        >
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-500 text-white shadow-sm">
+                            <FaCheck size={13} className="rotate-45" />
+                          </div>
+                          <span className="text-sm leading-snug text-slate-600">{item}</span>
+                        </div>
                       ))}
-                    </ul>
+                    </div>
                   </div>
                 </div>
               )}
@@ -440,56 +491,6 @@ const TourDetail = ({ tour, relatedTours }) => {
                 </div>
               )}
 
-              {/* Mobile Pricing */}
-              <div className="mt-12 lg:hidden">
-                <div className="rounded-[2rem] border border-slate-100 bg-white p-6 shadow-[0_16px_40px_rgba(15,23,42,0.06)] md:p-8">
-                  <p className="text-[11px] font-black uppercase tracking-[0.3em] text-orange-500">
-                    Pricing
-                  </p>
-                  <h3 className="mt-3 text-2xl font-black tracking-tight text-slate-900">
-                    {hasNewPrice ? getPriceBadge(tour.price, tour.discountPrice) : tour.priceRange || "Custom quote"}
-                  </h3>
-
-                  {hasNewPrice && (() => {
-                    const savings = getSavings(tour.price, tour.discountPrice);
-                    return savings ? (
-                      <div className="mt-3 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
-                        You save ₹{savings.amount.toLocaleString("en-IN")} ({savings.percent}% off)
-                      </div>
-                    ) : null;
-                  })()}
-
-                  <div className="mt-6 space-y-3">
-                    {hasNewPrice && (
-                      <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 text-sm">
-                        <span className="text-slate-500">Base Price</span>
-                        <span className="font-bold text-slate-900">{formatPrice(tour.price)}</span>
-                      </div>
-                    )}
-                    {hasNewPrice && tour.discountPrice > 0 && (
-                      <div className="flex items-center justify-between rounded-xl bg-emerald-50 px-4 py-3 text-sm">
-                        <span className="text-emerald-600">Discounted Price</span>
-                        <span className="font-bold text-emerald-700">{formatPrice(tour.discountPrice)}</span>
-                      </div>
-                    )}
-                    <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 text-sm">
-                      <span className="text-slate-500">Duration</span>
-                      <span className="font-bold text-slate-900">{durationName}</span>
-                    </div>
-                    <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 text-sm">
-                      <span className="text-slate-500">Best Time</span>
-                      <span className="font-bold text-slate-900">{tour.bestTimeToVisit || "Year-round"}</span>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => navigate(`/reserve?tourId=${tour._id || tour.id}`)}
-                    className="mt-6 flex w-full items-center justify-center rounded-full bg-orange-500 px-5 py-3.5 text-[11px] font-black uppercase tracking-[0.18em] text-white transition-all duration-300 hover:bg-orange-600 cursor-pointer"
-                  >
-                    Reserve Now
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -527,6 +528,22 @@ const TourDetail = ({ tour, relatedTours }) => {
       )}
 
       <TourCTASection city={cityName} />
+
+      {/* Sticky Mobile Bottom Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-[999] border-t border-slate-200 bg-white/95 backdrop-blur-md px-4 py-3 lg:hidden flex items-center justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Starting from</p>
+          <p className="text-xl font-black text-slate-900">
+            {hasNewPrice ? getStartingPrice(tour.price, tour.discountPrice) : tour.priceRange || "Custom"}
+          </p>
+        </div>
+        <button
+          onClick={() => navigate(`/reserve?tourId=${tour._id || tour.id}`)}
+          className="flex items-center justify-center rounded-full bg-orange-500 px-6 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-white shadow-lg transition-all duration-300 hover:bg-orange-600 cursor-pointer shrink-0"
+        >
+          Reserve Now
+        </button>
+      </div>
     </div>
   );
 };

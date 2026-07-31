@@ -33,22 +33,11 @@ const BlogCard = ({ post, variant = "default" }) => {
         <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-slate-600">{post.excerpt}</p>
 
         <div className="mt-auto pt-5">
-          <div className="mb-2 flex items-center justify-between text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
-            <span>Reading Progress</span>
-            <span>{post.progress}%</span>
-          </div>
-          <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-orange-500 to-amber-400"
-              style={{ width: `${post.progress}%` }}
-            />
-          </div>
+          <span className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-900 transition-colors duration-300 hover:text-orange-600">
+            Read More
+            <FaArrowRight className="transition-transform duration-300 group-hover:translate-x-1" />
+          </span>
         </div>
-
-        <span className="mt-5 inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-900 transition-colors duration-300 hover:text-orange-600">
-          Read More
-          <FaArrowRight className="transition-transform duration-300 group-hover:translate-x-1" />
-        </span>
       </div>
     </Link>
   );

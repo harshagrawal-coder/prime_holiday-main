@@ -20,7 +20,6 @@ const FeaturedPost = ({ post }) => {
             Featured Story
           </div>
         </div>
-
         <div className="flex flex-col justify-between p-6 md:p-8">
           <div>
             <div className="flex flex-wrap items-center gap-3 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
@@ -28,7 +27,6 @@ const FeaturedPost = ({ post }) => {
               <span>{post.date}</span>
               <span>{post.readTime}</span>
             </div>
-
             <h2 className="mt-5 text-3xl font-black tracking-tight text-slate-900 md:text-4xl">
               {post.title}
             </h2>
@@ -36,19 +34,6 @@ const FeaturedPost = ({ post }) => {
           </div>
 
           <div className="mt-8">
-            <div className="mb-5">
-              <div className="mb-2 flex items-center justify-between text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
-                <span>Reader Progress</span>
-                <span>{post.progress}% read</span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-orange-500 to-amber-400 transition-all duration-500"
-                  style={{ width: `${post.progress}%` }}
-                />
-              </div>
-            </div>
-
             <Link
               to={`/blog/${post.slug}`}
               className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-white shadow-lg transition-all duration-300 hover:-translate-y-1 hover:bg-orange-600 hover:shadow-orange-500/25"

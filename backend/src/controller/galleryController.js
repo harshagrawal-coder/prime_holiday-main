@@ -4,12 +4,12 @@ import { uploadFile, deleteFile } from "../services/imagekit.js";
 export async function createGallery(req, res) {
   let uploadedFileIds = [];
   try {
-    const { moodId, order } = req.body;
+    const { moodId, order, title, location } = req.body;
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({
         success: false,
         message: "Gallery image is required",
-      });
+      }); 
     }
     const mood = await Mood.findById(moodId);
     if (!mood) {
@@ -26,12 +26,17 @@ export async function createGallery(req, res) {
         folder: "/gallery",
       });
       uploadedFileIds.push(uploadedImage.fileId);
+      const imageTitle = title || image.originalname
+        .replace(/\.[^/.]+$/, "")
+        .replace(/[-_]/g, " ");
       const imageAlt = image.originalname
         .replace(/\.[^/.]+$/, "")
         .replace(/[-_]/g, " ");
       const gallery = await Gallery.create({
         url: uploadedImage.url,
         fileId: uploadedImage.fileId,
+        title: imageTitle,
+        location: location || "",
         alt: imageAlt,
         moodId: mood._id,
         moodName: mood.name,
@@ -351,7 +356,7 @@ export async function updateGallery(req, res) {
   try {
     const { id } = req.params;
 
-    const { moodId, order, isActive } = req.body;
+    const { moodId, order, isActive, title, location, featured } = req.body;
 
     const gallery = await Gallery.findById(id);
 
@@ -401,6 +406,21 @@ export async function updateGallery(req, res) {
     // Update order
     if (order !== undefined) {
       gallery.order = Number(order);
+    }
+
+    // Update title
+    if (title !== undefined) {
+      gallery.title = title;
+    }
+
+    // Update location
+    if (location !== undefined) {
+      gallery.location = location;
+    }
+
+    // Update featured
+    if (featured !== undefined) {
+      gallery.featured = featured === true || featured === "true";
     }
 
     // Update status

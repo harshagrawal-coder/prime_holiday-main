@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { FaArrowRight } from "react-icons/fa";
 import BlogGrid from "../components/blog/BlogGrid";
@@ -6,35 +6,82 @@ import BlogHeroSection from "../components/blog/BlogHeroSection";
 import BlogSidebar from "../components/blog/BlogSidebar";
 import FeaturedPost from "../components/blog/FeaturedPost";
 import SearchBar from "../components/blog/SearchBar";
-import { blogCategories, blogPosts, categorySlugs } from "../data/blogPosts";
+import { buildCategoryOptions, mapBlog } from "../utils/blogUtils";
+import axios from "axios";
+import { API_URI } from "../config/config";
 
 const INITIAL_VISIBLE = 6;
-
 const BlogPage = () => {
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
+  const [blogPosts, setBlogPosts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const featuredPost = useMemo(
-    () => blogPosts.find((post) => post.featured) ?? blogPosts[0],
-    []
+  const mappedPosts = useMemo(() => blogPosts.map(mapBlog), [blogPosts]);
+
+  const categoryOptions = useMemo(
+    () => [{ name: "All", slug: "" }, ...buildCategoryOptions(categories, mappedPosts)],
+    [categories, mappedPosts]
   );
 
+  const featuredPost = useMemo(
+    () => mappedPosts.find((post) => post.featured) ?? mappedPosts[0],
+    [mappedPosts]
+  );
+
+  const fetchBlogs = async () => {
+    try {
+      const response = await axios.get(`${API_URI}/blog`);
+      setBlogPosts(response.data.data || []);
+    } catch (error) {
+      console.log(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  const fetchCategories = async () => {
+    try {
+      const response = await axios.get(`${API_URI}/blogCategory`);
+      setCategories(response.data.data || []);
+    } catch (error) {
+      console.log(error.message);
+    }
+  };
+  useEffect(() => {
+    fetchBlogs();
+    fetchCategories();
+  }, []);
   const filteredPosts = useMemo(() => {
-    return blogPosts.filter((post) => {
+    return mappedPosts.filter((post) => {
       const matchesCategory = activeCategory === "All" || post.category === activeCategory;
-      const haystack = `${post.title} ${post.excerpt} ${post.category}`.toLowerCase();
+      const haystack = `
+${post.title}
+${post.excerpt}
+${post.category}
+`.toLowerCase();
       const matchesSearch = haystack.includes(searchTerm.trim().toLowerCase());
       return matchesCategory && matchesSearch;
     });
-  }, [activeCategory, searchTerm]);
+  }, [activeCategory, searchTerm, mappedPosts]);
 
   const visiblePosts = filteredPosts
-    .filter((post) => post.id !== featuredPost?.id)
+    .filter((post) => post._id !== featuredPost?._id)
     .slice(0, visibleCount);
 
-  const popularPosts = [...blogPosts].sort((a, b) => b.progress - a.progress).slice(0, 4);
-  const hasMore = filteredPosts.filter((post) => post.id !== featuredPost?.id).length > visibleCount;
+  const popularPosts = [...mappedPosts]
+    .sort((a, b) => b.dateValue - a.dateValue)
+    .slice(0, 4);
+  const hasMore = filteredPosts.filter((post) => post._id !== featuredPost?._id).length > visibleCount;
+
+  if (loading) {
+    return (
+      <section className="mx-auto max-w-7xl px-4 py-28 text-center sm:px-6">
+        <p className="text-[11px] font-black uppercase tracking-[0.3em] text-orange-500">Loading Stories</p>
+      </section>
+    );
+  }
 
   return (
     <>
@@ -62,32 +109,21 @@ const BlogPage = () => {
                 <SearchBar value={searchTerm} onChange={setSearchTerm} />
 
                 <div className="flex flex-wrap gap-3">
-                  {blogCategories.map((category) =>
-                    category === "All" ? (
-                      <button
-                        key={category}
-                        onClick={() => {
-                          setActiveCategory(category);
-                          setVisibleCount(INITIAL_VISIBLE);
-                        }}
-                        className={`rounded-full px-4 py-2 text-[11px] font-black uppercase tracking-[0.18em] transition-all duration-300 ${
-                          activeCategory === category
-                            ? "bg-slate-950 text-white shadow-lg"
-                            : "border border-white/60 bg-white/75 text-slate-600 backdrop-blur-md hover:border-orange-200 hover:text-orange-600"
+                  {categoryOptions.map((category) => (
+                    <button
+                      key={category.name}
+                      onClick={() => {
+                        setActiveCategory(category.name);
+                        setVisibleCount(INITIAL_VISIBLE);
+                      }}
+                      className={`rounded-full px-4 py-2 text-[11px] font-black uppercase tracking-[0.18em] transition-all duration-300 ${activeCategory === category.name
+                        ? "bg-slate-950 text-white shadow-lg"
+                        : "border border-white/60 bg-white/75 text-slate-600 backdrop-blur-md hover:border-orange-200 hover:text-orange-600"
                         }`}
-                      >
-                        {category}
-                      </button>
-                    ) : (
-                      <Link
-                        key={category}
-                        to={`/blog/category/${categorySlugs[category]}`}
-                        className="rounded-full border border-white/60 bg-white/75 px-4 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-600 backdrop-blur-md transition-all duration-300 hover:border-orange-200 hover:text-orange-600"
-                      >
-                        {category}
-                      </Link>
-                    ),
-                  )}
+                    >
+                      {category.name}
+                    </button>
+                  ))}
                 </div>
 
                 <BlogGrid posts={visiblePosts} />
@@ -107,7 +143,7 @@ const BlogPage = () => {
 
             <BlogSidebar
               popularPosts={popularPosts}
-              categories={blogCategories}
+              categories={categoryOptions}
               activeCategory={activeCategory}
               onCategoryChange={(category) => {
                 setActiveCategory(category);

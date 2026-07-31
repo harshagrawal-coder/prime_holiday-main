@@ -18,7 +18,7 @@ const BlogGrid = ({ posts }) => {
     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {posts.map((post, index) => (
         <motion.div
-          key={post.id}
+          key={post._id || post.id}
           initial={{ opacity: 0, y: 22 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.2 }}

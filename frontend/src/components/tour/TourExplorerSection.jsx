@@ -49,17 +49,7 @@ const TourExplorerSection = () => {
     resetFilters,
   } = useTourFilters({ selectedVibeExternal: selectedVibe, tours, city, moods, states, durations, regions });
 
-  const [openDropdown, setOpenDropdown] = useState(null);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (!event.target.closest(".dropdown-container")) {
-        setOpenDropdown(null);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   const fetchTours = async () => {
     try {
@@ -199,8 +189,6 @@ const TourExplorerSection = () => {
     setSelectedVibe: handleVibeChange,
     priceRange,
     setPriceRange,
-    openDropdown,
-    setOpenDropdown,
   };
 
   const handleResetFilters = () => {

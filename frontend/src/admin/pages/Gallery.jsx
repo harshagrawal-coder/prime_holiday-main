@@ -19,6 +19,8 @@ const Gallery = () => {
   const [formData, setFormData] = useState({
     moodId: "",
     order: "",
+    title: "",
+    location: "",
     images: [],
   });
   const [error, setError] = useState("");
@@ -79,6 +81,8 @@ const Gallery = () => {
           fd.append("image", formData.images[0].file);
           fd.append("moodId", formData.moodId);
           fd.append("order", formData.order || 0);
+          fd.append("title", formData.title);
+          fd.append("location", formData.location);
           const response = await axios.put(`${API_URI}/gallery/${editingId}`, fd, { headers });
           setItems((prev) =>
             prev.map((item) => (item._id === editingId ? response.data.data : item))
@@ -86,7 +90,7 @@ const Gallery = () => {
         } else {
           const response = await axios.put(
             `${API_URI}/gallery/${editingId}`,
-            { moodId: formData.moodId, order: Number(formData.order) || 0 },
+            { moodId: formData.moodId, order: Number(formData.order) || 0, title: formData.title, location: formData.location },
             { headers }
           );
           setItems((prev) =>
@@ -97,6 +101,8 @@ const Gallery = () => {
         const fd = new FormData();
         fd.append("moodId", formData.moodId);
         fd.append("order", formData.order || 0);
+        fd.append("title", formData.title);
+        fd.append("location", formData.location);
         formData.images.forEach((item) => fd.append("images", item.file));
         const response = await axios.post(`${API_URI}/gallery`, fd, { headers });
         setItems((prev) => [...response.data.data, ...prev]);
@@ -152,12 +158,14 @@ const Gallery = () => {
       setFormData({
         moodId: item.moodId?._id || item.moodId || "",
         order: String(item.order ?? 0),
+        title: item.title || "",
+        location: item.location || "",
         images: [],
         previewUrl: item.url,
       });
     } else {
       setEditingId(null);
-      setFormData({ moodId: "", order: "", images: [], previewUrl: null });
+      setFormData({ moodId: "", order: "", title: "", location: "", images: [], previewUrl: null });
     }
     setShowModal(true);
   };
@@ -267,19 +275,20 @@ const Gallery = () => {
           <div className="grid grid-cols-1 gap-4 md:hidden">
             {filteredItems.map((item) => (
               <div key={item._id} className="rounded-xl border border-slate-200 bg-white p-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-slate-100">
-                    <img
-                      src={item.url}
-                      alt={item.alt}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-800 truncate">{item.alt}</p>
-                    <p className="text-xs text-slate-400 truncate">Mood: {item.moodName}</p>
-                    <p className="text-xs text-slate-400">Order: {item.order}</p>
-                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-slate-100">
+                      <img
+                        src={item.url}
+                        alt={item.title}
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-800 truncate">{item.title}</p>
+                      <p className="text-xs text-slate-400 truncate">{item.location}</p>
+                      <p className="text-xs text-slate-400">Mood: {item.moodName}</p>
+                      <p className="text-xs text-slate-400">Order: {item.order}</p>
+                    </div>
                   <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${item.isActive ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-600"
                     }`}>
                     {item.isActive ? "Active" : "Inactive"}
@@ -305,32 +314,40 @@ const Gallery = () => {
           <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-200 bg-white">
             <table className="w-full">
               <thead className="bg-slate-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">Image</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">Alt Text</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">Mood</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">Order</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">Status</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase text-slate-500">Actions</th>
-                </tr>
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">Image</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">Title</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">Location</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">Mood</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">Order</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">Featured</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">Status</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase text-slate-500">Actions</th>
+                  </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredItems.map((item) => (
-                  <tr key={item._id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3">
-                      <div className="h-12 w-12 overflow-hidden rounded-lg bg-slate-100">
-                        <img src={item.url} alt={item.alt} className="h-full w-full object-cover" />
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm font-medium text-slate-800 max-w-[200px] truncate">{item.alt}</td>
-                    <td className="px-4 py-3 text-sm text-slate-500">{item.moodName}</td>
-                    <td className="px-4 py-3 text-sm text-slate-500">{item.order}</td>
-                    <td className="px-4 py-3">
-                      <span className={`rounded-full px-2 py-1 text-xs font-medium ${item.isActive ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-600"
-                        }`}>
-                        {item.isActive ? "Active" : "Inactive"}
-                      </span>
-                    </td>
+                    <tr key={item._id} className="hover:bg-slate-50">
+                      <td className="px-4 py-3">
+                        <div className="h-12 w-12 overflow-hidden rounded-lg bg-slate-100">
+                          <img src={item.url} alt={item.title} className="h-full w-full object-cover" />
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-sm font-medium text-slate-800 max-w-[150px] truncate">{item.title}</td>
+                      <td className="px-4 py-3 text-sm text-slate-500 max-w-[120px] truncate">{item.location}</td>
+                      <td className="px-4 py-3 text-sm text-slate-500">{item.moodName}</td>
+                      <td className="px-4 py-3 text-sm text-slate-500">{item.order}</td>
+                      <td className="px-4 py-3">
+                        <span className={`rounded-full px-2 py-1 text-xs font-medium ${item.featured ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-400"}`}>
+                          {item.featured ? "Featured" : "—"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`rounded-full px-2 py-1 text-xs font-medium ${item.isActive ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-600"
+                          }`}>
+                          {item.isActive ? "Active" : "Inactive"}
+                        </span>
+                      </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <button onClick={() => openModal(item)} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-orange-500"><FaEdit size={14} /></button>
@@ -432,6 +449,32 @@ const Gallery = () => {
                     </option>
                   ))}
                 </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-600">
+                  Title *
+                </label>
+                <input
+                  required
+                  type="text"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none"
+                  placeholder="e.g. Dal Lake Reflections"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-600">
+                  Location *
+                </label>
+                <input
+                  required
+                  type="text"
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none"
+                  placeholder="e.g. Srinagar, Kashmir"
+                />
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-slate-600">

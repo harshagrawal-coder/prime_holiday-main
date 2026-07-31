@@ -1,12 +1,28 @@
 import { Link, useParams } from "react-router-dom";
 import toursData from "../data/toursData.json";
 import TourDetail from "../components/tour/TourDetail";
+import axios from "axios";
+import { API_URI } from "../config/config";
+import { useEffect, useState } from "react";
 
 const TourDetailsPage = () => {
-  const { id } = useParams();
-  const tours = toursData;
-  const tour = tours.find((item) => String(item.id) === String(id));
+  const { slug } = useParams();
+  const [tour, setTour] = useState(null)
+  const [relatedTours, setRelatedTours] = useState([])
+  const fetchTour = async () => {
+    const res = await axios.get(`${API_URI}/tour/slug/${slug}`);
+    setTour(res.data.data);
+    await fetchSimilarTour(res.data.data._id);
+  };
 
+  const fetchSimilarTour = async (id) => {
+    const token = localStorage.getItem("token")
+    const response = await axios.get(`${API_URI}/tour/${id}/similar`)
+    setRelatedTours(response.data.data)
+  }
+  useEffect(() => {
+    fetchTour();
+  }, [slug]);
   if (!tour) {
     return (
       <section className="relative overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-orange-950 py-28">
@@ -40,9 +56,9 @@ const TourDetailsPage = () => {
     );
   }
 
-  const relatedTours = tours
-    .filter((item) => String(item.id) !== String(id) && (item.region === tour.region || item.mood === tour.mood))
-    .slice(0, 3);
+  // const relatedTours = tours
+  //   .filter((item) => String(item.id) !== String(id) && (item.region === tour.region || item.mood === tour.mood))
+  //   .slice(0, 3);
 
   return <TourDetail tour={tour} relatedTours={relatedTours} />;
 };

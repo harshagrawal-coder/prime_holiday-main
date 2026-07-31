@@ -21,7 +21,7 @@ const Lightbox = ({ items, activeItem, onClose, onPrev, onNext }) => (
         onClick={(event) => event.stopPropagation()}
       >
           <LazyImage
-            src={activeItem.image}
+            src={activeItem.url}
             alt={activeItem.title}
             priority={true}
             wrapperClassName="w-full"
@@ -30,7 +30,7 @@ const Lightbox = ({ items, activeItem, onClose, onPrev, onNext }) => (
           />
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/95 via-slate-950/40 to-transparent px-6 pb-6 pt-16">
             <p className="text-[11px] font-black uppercase tracking-[0.3em] text-orange-300">
-              {activeItem.category}
+              {activeItem.moodName}
             </p>
             <div className="mt-3 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>

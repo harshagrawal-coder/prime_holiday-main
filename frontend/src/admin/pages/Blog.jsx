@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { FaSearch, FaPlus, FaEdit, FaTrash, FaImage, FaBold, FaItalic, FaList, FaLink } from "react-icons/fa";
-import { blogPosts as defaultBlogs } from "../../data/blogPosts.js";
+import { FaSearch, FaPlus, FaEdit, FaTrash, FaImage } from "react-icons/fa";
 import axios from "axios";
 import { API_URI } from "../../config/config.js";
 import { useNavigate } from "react-router-dom";
@@ -163,10 +162,25 @@ const Blog = () => {
                 </div>
               </div>
               <div className="p-4">
-                <div className="mb-2 flex items-center gap-2">
+                <div className="mb-2 flex items-center gap-2 flex-wrap">
                   <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-600">
                     {blog.categoryId?.name}
                   </span>
+                  {blog.featured ? (
+                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+                      Featured
+                    </span>
+                  ) : null}
+                  {blog.popular ? (
+                    <span className="rounded-full bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-700">
+                      Popular
+                    </span>
+                  ) : null}
+                  {blog.isActive === false ? (
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
+                      Inactive
+                    </span>
+                  ) : null}
                 </div>
                 <h3 className="font-semibold text-slate-800 truncate">{blog.title}</h3>
                 <p className="mt-1 text-xs text-slate-500">{blog.authorName} . {blog.readingTime} min read</p>

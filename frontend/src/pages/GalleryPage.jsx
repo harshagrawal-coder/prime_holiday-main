@@ -1,22 +1,44 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import GalleryHeroSection from "../components/gallery/GalleryHeroSection";
 import FilterBar from "../components/gallery/FilterBar";
 import GalleryGrid from "../components/gallery/GalleryGrid";
 import Lightbox from "../components/gallery/Lightbox";
 import FeaturedDestinationsRow from "../components/gallery/FeaturedDestinationsRow";
 import GalleryCTASection from "../components/gallery/GalleryCTASection";
-import { galleryCategories, galleryItems } from "../data/galleryItems";
+import axios from "axios";
+import { API_URI } from "../config/config";
 
 const GalleryPage = () => {
+  const [items, setItems] = useState([]);
   const [activeCategory, setActiveCategory] = useState("All");
   const [activeItem, setActiveItem] = useState(null);
 
-  const filteredItems = useMemo(() => {
-    if (activeCategory === "All") return galleryItems;
-    return galleryItems.filter((item) => item.category === activeCategory);
-  }, [activeCategory, galleryItems]);
+  useEffect(() => {
+    const fetchGallery = async () => {
+      try {
+        const response = await axios.get(`${API_URI}/gallery`);
+        setItems(response.data.data || []);
+      } catch (error) {
+        console.log(error.message);
+      }
+    };
+    fetchGallery();
+  }, []);
 
-  const activeIndex = filteredItems.findIndex((item) => item.id === activeItem?.id);
+  const categories = useMemo(() => {
+    const moodSet = new Set(items.map((item) => item.moodName));
+    const moods = Array.from(moodSet).map((m) => m.charAt(0).toUpperCase() + m.slice(1));
+    return ["All", ...moods.sort()];
+  }, [items]);
+
+  const filteredItems = useMemo(() => {
+    if (activeCategory === "All") return items;
+    return items.filter(
+      (item) => item.moodName?.toLowerCase() === activeCategory.toLowerCase()
+    );
+  }, [activeCategory, items]);
+
+  const activeIndex = filteredItems.findIndex((item) => item._id === activeItem?._id);
 
   const handlePrev = () => {
     if (!filteredItems.length) return;
@@ -33,7 +55,7 @@ const GalleryPage = () => {
   return (
     <>
       <GalleryHeroSection />
-      <FeaturedDestinationsRow />
+      <FeaturedDestinationsRow items={items} />
 
       <section className="relative overflow-hidden py-16 md:py-24">
         <div className="absolute inset-0 bg-gradient-to-br from-white via-orange-50/50 to-sky-50/60" />
@@ -50,11 +72,13 @@ const GalleryPage = () => {
             </p>
           </div>
 
-          <FilterBar
-            categories={galleryCategories}
-            activeCategory={activeCategory}
-            onChange={setActiveCategory}
-          />
+          {categories.length > 1 && (
+            <FilterBar
+              categories={categories}
+              activeCategory={activeCategory}
+              onChange={setActiveCategory}
+            />
+          )}
 
           <div className="mt-8">
             <GalleryGrid items={filteredItems} onSelect={setActiveItem} />

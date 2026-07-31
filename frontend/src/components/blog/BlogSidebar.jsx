@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
-import { categorySlugs } from "../../data/blogPosts";
 
-const BlogSidebar = ({ popularPosts, categories, activeCategory }) => (
+const BlogSidebar = ({ popularPosts, categories, activeCategory, onCategoryChange }) => (
   <aside className="hidden xl:block">
     <div className="sticky top-28 space-y-6">
       <div className="rounded-[1.75rem] border border-white/70 bg-white/80 p-6 shadow-[0_16px_40px_rgba(15,23,42,0.06)] backdrop-blur-md">
@@ -9,7 +8,7 @@ const BlogSidebar = ({ popularPosts, categories, activeCategory }) => (
         <div className="mt-5 space-y-5">
           {popularPosts.map((post, index) => (
             <Link
-              key={post.id}
+              key={post._id}
               to={`/blog/${post.slug}`}
               className="block border-b border-slate-100 pb-5 transition-colors hover:text-orange-600 last:border-b-0 last:pb-0"
             >
@@ -26,18 +25,19 @@ const BlogSidebar = ({ popularPosts, categories, activeCategory }) => (
       <div className="rounded-[1.75rem] border border-white/70 bg-white/80 p-6 shadow-[0_16px_40px_rgba(15,23,42,0.06)] backdrop-blur-md">
         <p className="text-[11px] font-black uppercase tracking-[0.32em] text-orange-500">Categories</p>
         <div className="mt-5 flex flex-col gap-3">
-          {categories.filter((item) => item !== "All").map((category) => (
-            <Link
-              key={category}
-              to={`/blog/category/${categorySlugs[category]}`}
+          {categories.filter((item) => item.name !== "All").map((category) => (
+            <button
+              key={category.name}
+              type="button"
+              onClick={() => onCategoryChange?.(category.name)}
               className={`rounded-2xl px-4 py-3 text-left text-sm font-bold transition-all duration-300 ${
-                activeCategory === category
+                activeCategory === category.name
                   ? "bg-slate-950 text-white shadow-lg"
                   : "bg-slate-50 text-slate-700 hover:bg-orange-50 hover:text-orange-600"
               }`}
             >
-              {category}
-            </Link>
+              {category.name}
+            </button>
           ))}
         </div>
       </div>

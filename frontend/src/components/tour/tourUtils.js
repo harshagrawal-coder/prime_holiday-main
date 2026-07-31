@@ -2,12 +2,10 @@ export const formatPrice = (price) => {
   if (price === undefined || price === null) return "Custom";
   return `₹${Number(price).toLocaleString("en-IN")}`;
 };
-
 export const getStartingPrice = (price, discountPrice) => {
   if (discountPrice && Number(discountPrice) > 0) return formatPrice(discountPrice);
   return formatPrice(price);
 };
-
 export const getPriceBadge = (price, discountPrice) => {
   const p = Number(price) || 0;
   const dp = Number(discountPrice) || 0;
@@ -15,7 +13,6 @@ export const getPriceBadge = (price, discountPrice) => {
   if (dp > 0) return `₹${dp.toLocaleString("en-IN")} - ₹${p.toLocaleString("en-IN")}`;
   return `From ₹${p.toLocaleString("en-IN")}`;
 };
-
 export const getSavings = (price, discountPrice) => {
   const p = Number(price) || 0;
   const dp = Number(discountPrice) || 0;

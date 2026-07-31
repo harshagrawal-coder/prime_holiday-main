@@ -12,7 +12,7 @@ const GalleryCard = ({ item, onClick }) => (
   >
     <div className="relative aspect-[3/2] overflow-hidden">
       <LazyImage
-        src={item.image}
+        src={item.url}
         alt={item.title}
         wrapperClassName="h-full w-full"
         className="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-110"
@@ -21,7 +21,7 @@ const GalleryCard = ({ item, onClick }) => (
       <div className="absolute inset-x-4 bottom-4 translate-y-4 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
         <div className="rounded-[1.25rem] border border-white/15 bg-white/12 p-4 backdrop-blur-md">
           <p className="text-[10px] font-black uppercase tracking-[0.28em] text-orange-200">
-            {item.category}
+            {item.moodName}
           </p>
           <h3 className="mt-2 text-xl font-black text-white">{item.title}</h3>
           <p className="mt-1 text-sm text-white/80">{item.location}</p>

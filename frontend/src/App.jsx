@@ -34,6 +34,7 @@ const AdminReviewsPage = lazy(() => import("./admin/pages/Reviews"));
 const AdminActivityPage = lazy(() => import("./admin/pages/ActivityLogs"));
 const AdminAnalyticsPage = lazy(() => import("./admin/pages/Analytics"));
 const AdminNotificationsPage = lazy(() => import("./admin/pages/Notifications"));
+const AdminHeroHomePage = lazy(() => import("./admin/pages/HeroHomePage"));
 
 // Master Data
 const AdminMasterDataPage = lazy(() => import("./admin/pages/MasterData"));
@@ -108,6 +109,7 @@ const AdminApp = () => (
       <Route path="analytics" element={<AdminAnalyticsPage />} />
       <Route path="notifications" element={<AdminNotificationsPage />} />
       <Route path="settings" element={<AdminSettingsPage />} />
+      <Route path="hero-slider" element={<AdminHeroHomePage />} />
 
       {/* Master Data */}
       <Route path="masterdata" element={<AdminMasterDataPage />} />

@@ -20,12 +20,7 @@ export async function createTour(req, res) {
       trending,
       featured,
       isActive,
-    } = req.body;
-    console.log("REQ FILES:");
-    console.log(req.files);
-
-    console.log("REQ BODY:");
-    console.log(req.body);
+    } = req.body;;
     if (!req.files?.thumbnail?.[0]) {
       return res.status(400).json({
         success: false,

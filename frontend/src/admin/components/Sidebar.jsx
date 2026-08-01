@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FaCalendarCheck, FaHome, FaPlusCircle, FaSuitcaseRolling, FaTimes, FaUsers, FaEnvelope, FaImages, FaCog, FaLightbulb, FaComment, FaTag, FaGift, FaHistory, FaList, FaChartBar, FaBell, FaChevronDown, FaChevronRight, FaBlog, FaStar, FaThList, FaTicketAlt, FaClipboardList, FaClock, FaGlobeAsia, FaMapMarkerAlt, FaCity, FaSmile, FaDatabase } from "react-icons/fa";
+import { FaCalendarCheck, FaHome, FaPlusCircle, FaSuitcaseRolling, FaTimes, FaUsers, FaEnvelope, FaImages, FaCog, FaLightbulb, FaComment, FaTag, FaGift, FaHistory, FaList, FaChartBar, FaBell, FaChevronDown, FaChevronRight, FaBlog, FaStar, FaThList, FaTicketAlt, FaClipboardList, FaClock, FaGlobeAsia, FaMapMarkerAlt, FaCity, FaSmile, FaDatabase, FaPhotoVideo } from "react-icons/fa";
 import { NavLink, useLocation } from "react-router-dom";
 const mainItems = [
   { label: "Dashboard", to: "/admin", icon: FaHome, end: true },
@@ -16,6 +16,7 @@ const moreItems = [
   { label: "Testimonials", to: "/admin/testimonials", icon: FaStar, end: true },
   { label: "Blog Categories", to: "/admin/categories", icon: FaThList, end: true },
   { label: "Gallery", to: "/admin/gallery", icon: FaImages, end: true },
+  { label: "Hero Slider", to: "/admin/hero-slider", icon: FaPhotoVideo, end: true },
   { label: "Coupons", to: "/admin/coupons", icon: FaTicketAlt, end: true },
   { label: "Reviews", to: "/admin/reviews", icon: FaComment, end: true },
   { label: "Messages", to: "/admin/messages", icon: FaEnvelope, end: true },

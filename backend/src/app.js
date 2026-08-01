@@ -10,6 +10,7 @@ import galleryRouter from "./routes/gallery.routes.js";
 import blogCategoryRouter from "./routes/blogCategory.routes.js";
 import blogRouter from "./routes/Blog.routes.js";
 import testimonialRouter from "./routes/testimonial.routes.js";
+import router from "./routes/herohomepage.routes.js";
 import cookie from "cookie-parser";
 import cors from "cors";
 const app = express();
@@ -37,7 +38,7 @@ app.use("/api/gallery", galleryRouter);
 app.use("/api/blogCategory", blogCategoryRouter);
 app.use("/api/blog", blogRouter);
 app.use("/api/testimonial", testimonialRouter);
-
+app.use("/api/herohomepage", router)
 import multer from "multer";
 import { get } from "mongoose";
 

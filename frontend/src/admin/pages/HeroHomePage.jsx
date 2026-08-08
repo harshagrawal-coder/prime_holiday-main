@@ -9,8 +9,8 @@ import {
   FaToggleOff,
   FaUpload,
 } from "react-icons/fa";
-import axios from "axios"
-import { API_URI } from "../../config/config"
+import axios from "axios";
+import { API_URI } from "../../config/config";
 import { useEffect } from "react";
 const HeroHomePage = () => {
   const [items, setItems] = useState([]);
@@ -32,62 +32,68 @@ const HeroHomePage = () => {
     return true;
   });
   const fetchHeroImage = async () => {
-    const token = localStorage.getItem("token")
-    const response = await axios.get(`${API_URI}/herohomepage`, {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${API_URI}/herohomepage/admin/all`, {
       headers: {
         Authorization: `Bearer ${token}`,
-        "Content-Type": "multipart/form-data"
-      }
-    })
-    setItems(response.data.data)
-  }
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    setItems(response.data.data);
+  };
   useEffect(() => {
-    fetchHeroImage()
-  }, [])
+    fetchHeroImage();
+  }, []);
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    const data = new FormData()
-    data.append("alt", formData.alt)
-    data.append("order", formData.order)
-    data.append("isActive", formData.isActive)
+    e.preventDefault();
+    const data = new FormData();
+    data.append("alt", formData.alt);
+    data.append("order", formData.order);
+    data.append("isActive", formData.isActive);
     if (formData.images.length > 0) {
       data.append("image", formData.images[0].file);
     }
-    const token = localStorage.getItem("token")
+    const token = localStorage.getItem("token");
     if (editingId) {
-      const response = await axios.put(`${API_URI}/herohomepage/${editingId}`, data, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data"
-        }
-      })
+      const response = await axios.put(
+        `${API_URI}/herohomepage/${editingId}`,
+        data,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
     } else {
       const response = await axios.post(`${API_URI}/herohomepage`, data, {
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data"
-        }
-      })
+          "Content-Type": "multipart/form-data",
+        },
+      });
     }
-    await fetchHeroImage()
-    closeModal()
-  }
+    await fetchHeroImage();
+    closeModal();
+  };
   const handleDelete = async (id) => {
     const confirmDelete = window.confirm("Delete this hero image?");
     if (!confirmDelete) return;
-    const token = localStorage.getItem("token")
+    const token = localStorage.getItem("token");
     const response = await axios.delete(`${API_URI}/herohomepage/${id}`, {
       headers: {
-        Authorization: `Bearer ${token}`
-      }
-    })
+        Authorization: `Bearer ${token}`,
+      },
+    });
     setItems((prev) => prev.filter((item) => item._id !== id));
   };
 
   const toggleStatus = (id, current) => {
     setItems((prev) =>
       activeFilter === "all"
-        ? prev.map((item) => (item._id === id ? { ...item, isActive: !current } : item))
+        ? prev.map((item) =>
+            item._id === id ? { ...item, isActive: !current } : item,
+          )
         : prev.filter((item) => item._id !== id),
     );
   };
@@ -146,7 +152,9 @@ const HeroHomePage = () => {
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Homepage Hero</h1>
-          <p className="text-sm text-slate-500">Manage hero homepage slider images</p>
+          <p className="text-sm text-slate-500">
+            Manage hero homepage slider images
+          </p>
         </div>
         <button
           onClick={() => openModal()}
@@ -159,35 +167,40 @@ const HeroHomePage = () => {
       <div className="mb-4 flex flex-wrap gap-2">
         <button
           onClick={() => setActiveFilter("all")}
-          className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${activeFilter === "all"
-            ? "bg-orange-500 text-white"
-            : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-            }`}
+          className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+            activeFilter === "all"
+              ? "bg-orange-500 text-white"
+              : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+          }`}
         >
           All
         </button>
         <button
           onClick={() => setActiveFilter("active")}
-          className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${activeFilter === "active"
-            ? "bg-orange-500 text-white"
-            : "border border-slate-200 bg-white text-slate-600 hover:bg-green-50"
-            }`}
+          className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+            activeFilter === "active"
+              ? "bg-orange-500 text-white"
+              : "border border-slate-200 bg-white text-slate-600 hover:bg-green-50"
+          }`}
         >
           Active
         </button>
         <button
           onClick={() => setActiveFilter("inactive")}
-          className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${activeFilter === "inactive"
-            ? "bg-orange-500 text-white"
-            : "border border-slate-200 bg-white text-slate-600 hover:bg-red-50"
-            }`}
+          className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+            activeFilter === "inactive"
+              ? "bg-orange-500 text-white"
+              : "border border-slate-200 bg-white text-slate-600 hover:bg-red-50"
+          }`}
         >
           Inactive
         </button>
       </div>
 
       {error && (
-        <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>
+        <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+          {error}
+        </div>
       )}
 
       {filteredItems.length === 0 ? (
@@ -199,7 +212,10 @@ const HeroHomePage = () => {
         <>
           <div className="grid grid-cols-1 gap-4 md:hidden">
             {filteredItems.map((item) => (
-              <div key={item._id} className="rounded-xl border border-slate-200 bg-white p-4">
+              <div
+                key={item._id}
+                className="rounded-xl border border-slate-200 bg-white p-4"
+              >
                 <div className="flex items-center gap-3">
                   <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-slate-100">
                     <img
@@ -212,11 +228,16 @@ const HeroHomePage = () => {
                     <p className="truncate text-sm font-semibold text-slate-800">
                       {item.image.alt}
                     </p>
-                    <p className="text-xs text-slate-400">Order: {item.order}</p>
+                    <p className="text-xs text-slate-400">
+                      Order: {item.order}
+                    </p>
                   </div>
                   <span
-                    className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${item.isActive ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-600"
-                      }`}
+                    className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                      item.isActive
+                        ? "bg-green-100 text-green-700"
+                        : "bg-slate-100 text-slate-600"
+                    }`}
                   >
                     {item.isActive ? "Active" : "Inactive"}
                   </span>
@@ -230,12 +251,17 @@ const HeroHomePage = () => {
                   </button>
                   <button
                     onClick={() => toggleStatus(item._id, item.isActive)}
-                    className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition ${item.isActive
-                      ? "text-green-600 hover:bg-green-50"
-                      : "text-slate-500 hover:bg-slate-100"
-                      }`}
+                    className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                      item.isActive
+                        ? "text-green-600 hover:bg-green-50"
+                        : "text-slate-500 hover:bg-slate-100"
+                    }`}
                   >
-                    {item.isActive ? <FaToggleOn size={14} /> : <FaToggleOff size={14} />}
+                    {item.isActive ? (
+                      <FaToggleOn size={14} />
+                    ) : (
+                      <FaToggleOff size={14} />
+                    )}
                     {item.isActive ? "Active" : "Inactive"}
                   </button>
                   <button
@@ -285,11 +311,16 @@ const HeroHomePage = () => {
                     <td className="max-w-[220px] truncate px-4 py-3 text-sm font-medium text-slate-800">
                       {item.image.alt}
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-500">{item.order}</td>
+                    <td className="px-4 py-3 text-sm text-slate-500">
+                      {item.order}
+                    </td>
                     <td className="px-4 py-3">
                       <span
-                        className={`rounded-full px-2 py-1 text-xs font-medium ${item.isActive ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-600"
-                          }`}
+                        className={`rounded-full px-2 py-1 text-xs font-medium ${
+                          item.isActive
+                            ? "bg-green-100 text-green-700"
+                            : "bg-slate-100 text-slate-600"
+                        }`}
                       >
                         {item.isActive ? "Active" : "Inactive"}
                       </span>
@@ -304,12 +335,17 @@ const HeroHomePage = () => {
                         </button>
                         <button
                           onClick={() => toggleStatus(item._id, item.isActive)}
-                          className={`rounded-lg p-2 transition ${item.isActive
-                            ? "text-green-600 hover:bg-slate-100 hover:text-green-700"
-                            : "text-red-500 hover:bg-slate-100 hover:text-red-600"
-                            }`}
+                          className={`rounded-lg p-2 transition ${
+                            item.isActive
+                              ? "text-green-600 hover:bg-slate-100 hover:text-green-700"
+                              : "text-red-500 hover:bg-slate-100 hover:text-red-600"
+                          }`}
                         >
-                          {item.isActive ? <FaToggleOn size={22} /> : <FaToggleOff size={22} />}
+                          {item.isActive ? (
+                            <FaToggleOn size={22} />
+                          ) : (
+                            <FaToggleOff size={22} />
+                          )}
                         </button>
                         <button
                           onClick={() => handleDelete(item._id)}
@@ -334,7 +370,10 @@ const HeroHomePage = () => {
               <h3 className="text-lg font-bold text-slate-800">
                 {editingId ? "Edit Hero Image" : "Add Hero Images"}
               </h3>
-              <button onClick={closeModal} className="text-slate-400 hover:text-slate-600">
+              <button
+                onClick={closeModal}
+                className="text-slate-400 hover:text-slate-600"
+              >
                 <FaTimes />
               </button>
             </div>
@@ -346,15 +385,24 @@ const HeroHomePage = () => {
                 <div
                   onDragOver={(e) => {
                     e.preventDefault();
-                    e.currentTarget.classList.add("border-orange-500", "bg-orange-50");
+                    e.currentTarget.classList.add(
+                      "border-orange-500",
+                      "bg-orange-50",
+                    );
                   }}
                   onDragLeave={(e) => {
                     e.preventDefault();
-                    e.currentTarget.classList.remove("border-orange-500", "bg-orange-50");
+                    e.currentTarget.classList.remove(
+                      "border-orange-500",
+                      "bg-orange-50",
+                    );
                   }}
                   onDrop={(e) => {
                     e.preventDefault();
-                    e.currentTarget.classList.remove("border-orange-500", "bg-orange-50");
+                    e.currentTarget.classList.remove(
+                      "border-orange-500",
+                      "bg-orange-50",
+                    );
                     handleFiles(e.dataTransfer.files);
                   }}
                   onClick={() => fileInputRef.current?.click()}
@@ -383,7 +431,9 @@ const HeroHomePage = () => {
                       <p className="text-sm text-slate-500">
                         Drag and drop images here, or click to browse
                       </p>
-                      <p className="text-xs text-slate-400">Supports JPEG, PNG, WebP</p>
+                      <p className="text-xs text-slate-400">
+                        Supports JPEG, PNG, WebP
+                      </p>
                     </>
                   )}
                 </div>
@@ -398,7 +448,8 @@ const HeroHomePage = () => {
                 {formData.images.length > 0 && (
                   <div className="mt-3">
                     <p className="mb-2 text-xs font-medium text-slate-500">
-                      PREVIEW ({formData.images.length} file{formData.images.length > 1 ? "s" : ""})
+                      PREVIEW ({formData.images.length} file
+                      {formData.images.length > 1 ? "s" : ""})
                     </p>
                     <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
                       {formData.images.map((item, index) => (
@@ -431,7 +482,9 @@ const HeroHomePage = () => {
                 <input
                   type="text"
                   value={formData.alt}
-                  onChange={(e) => setFormData({ ...formData, alt: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, alt: e.target.value })
+                  }
                   className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none"
                   placeholder="e.g. Himalayan valley at sunrise"
                 />
@@ -444,7 +497,9 @@ const HeroHomePage = () => {
                   type="number"
                   min="1"
                   value={formData.order}
-                  onChange={(e) => setFormData({ ...formData, order: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, order: e.target.value })
+                  }
                   className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none"
                   placeholder="1"
                 />
@@ -461,9 +516,14 @@ const HeroHomePage = () => {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setFormData({ ...formData, isActive: !formData.isActive })}
-                  className={`rounded-full px-3 py-1 text-xs font-semibold transition ${formData.isActive ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500"
-                    }`}
+                  onClick={() =>
+                    setFormData({ ...formData, isActive: !formData.isActive })
+                  }
+                  className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                    formData.isActive
+                      ? "bg-green-100 text-green-700"
+                      : "bg-slate-100 text-slate-500"
+                  }`}
                 >
                   {formData.isActive ? "Active" : "Inactive"}
                 </button>

@@ -1,18 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaCalendarAlt, FaMapMarkerAlt, FaUsers } from "react-icons/fa";
+import axios from "axios";
+import { API_URI } from "../../config/config";
 
-const images = [
-  "https://images.unsplash.com/photo-1501785888041-af3ef285b470",
-  "https://images.unsplash.com/photo-1526772662000-3f88f10405ff",
-  "https://images.unsplash.com/photo-1507525428034-b723cf961d3e",
-];
-
+const images = [];
 const destinations = ["Manali", "Goa", "Jaipur", "Kerala", "Rishikesh", "Udaipur"];
-
 const HeroSection = () => {
   const navigate = useNavigate();
   const [index, setIndex] = useState(0);
+  const [images, setImage] = useState([])
   const [displayText, setDisplayText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [search, setSearch] = useState({
@@ -22,14 +19,28 @@ const HeroSection = () => {
     guests: 1,
   });
   const [showSuggestions, setShowSuggestions] = useState(false);
-
+  const fetchImage = async () => {
+    const response = await axios.get(`${API_URI}/herohomepage?isActive=true`)
+    console.log(response.data.data)
+    setImage(response.data.data)
+  }
   useEffect(() => {
+    fetchImage()
+  }, [])
+  useEffect(() => {
+    if (images.length === 0) return;
+
     const interval = setInterval(() => {
       setIndex((prev) => (prev + 1) % images.length);
     }, 4000);
-    return () => clearInterval(interval);
-  }, []);
 
+    return () => clearInterval(interval);
+  }, [images]);
+  useEffect(() => {
+    if (index >= images.length) {
+      setIndex(0);
+    }
+  }, [images, index]);
   useEffect(() => {
     const fullPhrase = "Incredible India";
     const typingSpeed = 150;
@@ -66,8 +77,9 @@ const HeroSection = () => {
   return (
     <div className="relative min-h-[720px] w-full overflow-hidden md:h-[75vh] md:min-h-[550px]">
       <img
-        src={images[index]}
-        alt="Hero Background"
+
+        src={images[index]?.image?.url}
+        alt={images[index]?.image?.alt}
         className="absolute h-full w-full object-cover transition-all duration-1000 ease-in-out"
       />
       <div className="absolute inset-0 bg-black/50" />

@@ -8,11 +8,21 @@ import {
   FaToggleOn,
   FaToggleOff,
 } from "react-icons/fa";
-import { API_URI } from "../../config/config";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchCities,
+  createCity,
+  updateCity,
+  deleteCity,
+  updateCityStatus,
+} from "../../redux/slices/citySlice";
+import { fetchStates } from "../../redux/slices/stateSlice";
+import { fetchRegions } from "../../redux/slices/regionSlice";
 const Cities = () => {
-  const [items, setItems] = useState([]);
-  const [states, setState] = useState([]);
-  const [regions, setRegion] = useState([]);
+  const dispatch = useDispatch();
+  const { items } = useSelector((state) => state.city);
+  const { items: states } = useSelector((state) => state.state);
+  const { items: regions } = useSelector((state) => state.region);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({ name: "", stateId: "" });
@@ -21,31 +31,11 @@ const Cities = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const url = editingId
-        ? `${API_URI}/city/${editingId}`
-        : `${API_URI}/city`;
-      const method = editingId ? "PUT" : "POST";
-      const token = localStorage.getItem("token");
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(formData),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to fetch states");
-      }
-      if (editingId) {
-        setItems((prev) =>
-          prev.map((item) =>
-            item._id == editingId ? data.populatedCity : item,
-          ),
-        );
-      } else {
-        setItems((prev) => [data.populatedCity, ...prev]);
+      const result = editingId
+        ? await dispatch(updateCity({ id: editingId, data: formData }))
+        : await dispatch(createCity(formData));
+      if (result.error) {
+        throw new Error(result.payload || "Failed to save city");
       }
       closeModal();
     } catch (error) {
@@ -59,115 +49,23 @@ const Cities = () => {
       if (!confirmDelete) {
         return;
       }
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_URI}/city/${id}`, {
-        method: "DELETE",
-        headers: {
-          authorization: `Bearer ${token}`,
-        },
-      });
-      const data = response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to fetch regions");
-      }
-      setItems((prev) => prev.filter((item) => item._id !== id));
+      dispatch(deleteCity(id));
     } catch (error) {}
   };
 
-  const fetchRegions = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_URI}/region?isActive=true`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to fetch regions");
-      }
-      setRegion(data.regions);
-    } catch (error) {
-      setError(error.message);
-    }
-  };
-  const fetchState = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_URI}/state?isActive=true`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to fetch states");
-      }
-      setState(data.states);
-    } catch (error) {
-      setError(error.message);
-    }
-  };
-  const fetchCity = async (isActive) => {
-    try {
-      let url = `${API_URI}/city`;
-      if (isActive != undefined) {
-        url = `${url}?isActive=${isActive}`;
-      }
-      const token = localStorage.getItem("token");
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to fetch cities");
-      }
-      setItems(data.cities);
-      if (isActive === undefined) {
-        setActiveFilter("all");
-      } else if (isActive) {
-        setActiveFilter("active");
-      } else {
-        setActiveFilter("inactive");
-      }
-    } catch (error) {
-      setError(error.message);
-    }
-  };
   useEffect(() => {
-    fetchRegions();
-    fetchState();
-    fetchCity();
-  }, []);
+    dispatch(fetchRegions({ isActive: true }));
+    dispatch(fetchStates({ isActive: true }));
+    dispatch(fetchCities());
+  }, [dispatch]);
   const toggleStatus = async (id, current) => {
-    const newStatus = !current;
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_URI}/city/${id}/status`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          isActive: newStatus,
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to update city status");
+      const result = await dispatch(updateCityStatus({ id, isActive: !current }));
+      if (result.error) {
+        throw new Error(result.payload || "Failed to update city status");
       }
-      if (activeFilter === "all") {
-        setItems((prev) =>
-          prev.map((item) => (item._id === id ? data.populatedCity : item)),
-        );
-      } else {
-        setItems((prev) => prev.filter((item) => item._id !== id));
+      if (activeFilter !== "all") {
+        dispatch(fetchCities({ isActive: activeFilter === "active" }));
       }
     } catch (error) {
       setError(error.message);
@@ -208,7 +106,7 @@ const Cities = () => {
         <button
           onClick={() => {
             setActiveFilter("all");
-            fetchCity();
+            dispatch(fetchCities());
           }}
           className={`rounded-lg px-4 py-2 text-sm font-semibold transition
       ${
@@ -222,7 +120,7 @@ const Cities = () => {
         <button
           onClick={() => {
             setActiveFilter("active");
-            fetchCity(true);
+            dispatch(fetchCities({ isActive: true }));
           }}
           className={`rounded-lg px-4 py-2 text-sm font-semibold transition
       ${
@@ -237,7 +135,7 @@ const Cities = () => {
         <button
           onClick={() => {
             setActiveFilter("inactive");
-            fetchCity(false);
+            dispatch(fetchCities({ isActive: false }));
           }}
           className={`rounded-lg px-4 py-2 text-sm font-semibold transition
       ${

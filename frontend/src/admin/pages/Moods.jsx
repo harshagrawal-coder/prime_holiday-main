@@ -8,9 +8,17 @@ import {
   FaToggleOn,
   FaToggleOff,
 } from "react-icons/fa";
-import { API_URI } from "../../config/config";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchMoods,
+  createMood,
+  updateMood,
+  deleteMood,
+  updateMoodStatus,
+} from "../../redux/slices/moodSlice";
 const Moods = () => {
-  const [items, setItems] = useState([]);
+  const dispatch = useDispatch();
+  const { items } = useSelector((state) => state.mood);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({ name: "", image: null });
@@ -24,32 +32,17 @@ const Moods = () => {
       setError("Please upload a mood image.");
       return;
     }
-    let url = editingId ? `${API_URI}/mood/${editingId}` : `${API_URI}/mood`;
-    let method = editingId ? "put" : "post";
-    const token = localStorage.getItem("token");
     const payload = new FormData();
     payload.append("name", formData.name);
     if (formData.image) {
       payload.append("image", formData.image);
     }
     try {
-      const response = await fetch(url, {
-        method,
-        headers: {
-          authorization: `Bearer ${token}`,
-        },
-        body: payload,
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "mood not fetched");
-      }
-      if (editingId) {
-        setItems((prev) =>
-          prev.map((item) => (item._id === editingId ? data.mood : item)),
-        );
-      } else {
-        setItems((prev) => [data.mood, ...prev]);
+      const result = editingId
+        ? await dispatch(updateMood({ id: editingId, data: payload }))
+        : await dispatch(createMood(payload));
+      if (result.error) {
+        throw new Error(result.payload || "Failed to save mood");
       }
       closeModal();
     } catch (error) {
@@ -72,74 +65,30 @@ const Moods = () => {
     setImagePreview(URL.createObjectURL(file));
     setError("");
   };
-  const fetchMoods = async (isActive) => {
-    const token = localStorage.getItem("token");
-    try {
-      let url = `${API_URI}/mood`;
-      if (isActive !== undefined) {
-        url += `?isActive=${isActive}`;
-      }
-      const response = await fetch(url, {
-        method: "get",
-        headers: {
-          authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "mood not fetched");
-      }
-      setItems(data.mood);
-    } catch (error) {
-      setError(error.message);
-    }
-  };
   useEffect(() => {
-    fetchMoods();
-  }, []);
+    dispatch(fetchMoods());
+  }, [dispatch]);
   const handleDelete = async (id) => {
     const confirmDelete = window.confirm("Delete this mood?");
     if (!confirmDelete) {
       return;
     }
-    const token = localStorage.getItem("token");
     try {
-      const response = await fetch(`${API_URI}/mood/${id}`, {
-        method: "delete",
-        headers: {
-          authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to delete mood");
-      }
-      setItems((prev) => prev.filter((item) => item._id !== id));
+      dispatch(deleteMood(id));
     } catch (error) {
       setError(error.message);
     }
   };
   const toggleStatus = async (id, current) => {
-    const newStatus = !current;
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_URI}/mood/${id}/status`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          isActive: newStatus,
-        }),
-      });
-      const data = await response.json();
-      if (activeFilter === "all") {
-        setItems((prev) =>
-          prev.map((item) => (item._id === id ? data.mood : item)),
-        );
-      } else {
-        setItems((prev) => prev.filter((item) => item._id !== id));
+      const result = await dispatch(
+        updateMoodStatus({ id, isActive: !current }),
+      );
+      if (result.error) {
+        throw new Error(result.payload || "Failed to update mood status");
+      }
+      if (activeFilter !== "all") {
+        dispatch(fetchMoods({ isActive: activeFilter === "active" }));
       }
     } catch (error) {}
   };
@@ -180,7 +129,7 @@ const Moods = () => {
         <button
           onClick={() => {
             setActiveFilter("all");
-            fetchMoods();
+            dispatch(fetchMoods());
           }}
           className={`rounded-lg px-4 py-2 text-sm font-semibold transition
       ${
@@ -194,7 +143,7 @@ const Moods = () => {
         <button
           onClick={() => {
             setActiveFilter("active");
-            fetchMoods(true);
+            dispatch(fetchMoods({ isActive: true }));
           }}
           className={`rounded-lg px-4 py-2 text-sm font-semibold transition
       ${
@@ -209,7 +158,7 @@ const Moods = () => {
         <button
           onClick={() => {
             setActiveFilter("inactive");
-            fetchMoods(false);
+            dispatch(fetchMoods({ isActive: false }));
           }}
           className={`rounded-lg px-4 py-2 text-sm font-semibold transition
       ${

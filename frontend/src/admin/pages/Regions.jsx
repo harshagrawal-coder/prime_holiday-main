@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { API_URI } from "../../config/config.js";
+import { useDispatch, useSelector } from "react-redux";
 import {
   FaGlobeAsia,
   FaEdit,
@@ -9,8 +9,16 @@ import {
   FaToggleOn,
   FaToggleOff,
 } from "react-icons/fa";
+import {
+  fetchRegions,
+  createRegion,
+  updateRegion,
+  deleteRegion,
+  updateRegionStatus,
+} from "../../redux/slices/regionSlice";
 const Regions = () => {
-  const [items, setItems] = useState([]);
+  const dispatch = useDispatch();
+  const { items } = useSelector((state) => state.region);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({ name: "" });
@@ -26,37 +34,11 @@ const Regions = () => {
       return;
     }
     try {
-      const token = localStorage.getItem("token");
-      // console.log("Token from localStorage:", token);
-      const method = editingId ? "PUT" : "POST";
-      const url = editingId
-        ? `${API_URI}/region/${editingId}`
-        : `${API_URI}/region`;
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          name: formData.name,
-        }),
-      });
-
-      const data = await response.json();
-      // console.log("Backend response:", data);
-      if (!response.ok) {
-        throw new Error(
-          data.message ||
-            (editingId ? "failed to update Region" : "Failed to create region"),
-        );
-      }
-      if (editingId) {
-        setItems((prev) =>
-          prev.map((item) => (item._id === editingId ? data.region : item)),
-        );
-      } else {
-        setItems((prev) => [data.region, ...prev]);
+      const result = editingId
+        ? await dispatch(updateRegion({ id: editingId, data: { name: formData.name } }))
+        : await dispatch(createRegion({ name: formData.name }));
+      if (result.error) {
+        throw new Error(result.payload || "Failed to save region");
       }
       closeModal();
     } catch (error) {
@@ -65,32 +47,10 @@ const Regions = () => {
       setLoading(false);
     }
   };
-  const fetchRegion = async (isActive) => {
-    try {
-      const token = localStorage.getItem("token");
-      let url = `${API_URI}/region`;
-      if (isActive != undefined) {
-        url = `${url}?isActive=${isActive}`;
-      }
-      const response = await fetch(url, {
-        method: "get",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "failed to fetch regions");
-      }
-      setItems(data.regions);
-    } catch (error) {
-      console.log(error.message);
-    }
-  };
 
   useEffect(() => {
-    fetchRegion();
-  }, []);
+    dispatch(fetchRegions());
+  }, [dispatch]);
   const handleDelete = async (regionId) => {
     const confirmDelete = window.confirm(
       "Are you sure you want to delete this region?",
@@ -99,46 +59,14 @@ const Regions = () => {
     if (!confirmDelete) {
       return;
     }
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_URI}/region/${regionId}`, {
-        method: "delete",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
-
-      setItems((prev) => prev.filter((item) => item._id !== regionId));
-    } catch (error) {
-      console.log(error.message);
-    }
+    dispatch(deleteRegion(regionId));
   };
 
   const toggleStatus = async (id, current) => {
     try {
-      const newStatus = !current;
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_URI}/region/${id}/status`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          isActive: newStatus,
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "failed to update region status");
-      }
-      if (activeFilter === "all") {
-        fetchRegion();
-      } else if (activeFilter === "active") {
-        fetchRegion(true);
-      } else {
-        fetchRegion(false);
+      const result = await dispatch(updateRegionStatus({ id, isActive: !current }));
+      if (result.error) {
+        throw new Error(result.payload || "failed to update region status");
       }
     } catch (error) {
       console.log(error.message);
@@ -188,7 +116,7 @@ const Regions = () => {
           }`}
           onClick={() => {
             setActiveFilter("all");
-            fetchRegion();
+            dispatch(fetchRegions());
           }}
         >
           All
@@ -197,7 +125,7 @@ const Regions = () => {
         <button
           onClick={() => {
             setActiveFilter("active");
-            fetchRegion(true);
+            dispatch(fetchRegions({ isActive: true }));
           }}
           className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
             activeFilter === "active"
@@ -211,7 +139,7 @@ const Regions = () => {
         <button
           onClick={() => {
             setActiveFilter("inactive");
-            fetchRegion(false);
+            dispatch(fetchRegions({ isActive: false }));
           }}
           className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
             activeFilter === "inactive"

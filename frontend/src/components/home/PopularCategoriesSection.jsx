@@ -3,8 +3,8 @@ import SectionHeading from "../ui/SectionHeading";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
-import axios from "axios";
-import { API_URI } from "../../config/config";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchMoods } from "../../redux/slices/moodSlice";
 
 const getCardsPerView = (width) => {
   if (width >= 1024) return 5;
@@ -14,7 +14,8 @@ const getCardsPerView = (width) => {
 };
 
 const PopularCategoriesSection = () => {
-  const [homeCategories, setHomeCategories] = useState([]);
+  const dispatch = useDispatch();
+  const { items: homeCategories } = useSelector((state) => state.mood);
   const [index, setIndex] = useState(0);
   const [cardsPerView, setCardsPerView] = useState(5);
   const [slideWidth, setSlideWidth] = useState(0);
@@ -22,14 +23,9 @@ const PopularCategoriesSection = () => {
   const containerRef = useRef(null);
   const trackRef = useRef(null);
 
-  const fetchMoods = useCallback(async () => {
-    const response = await axios.get(`${API_URI}/mood?isActive=true`);
-    setHomeCategories(response.data.mood);
-  }, []);
-
   useEffect(() => {
-    fetchMoods();
-  }, [fetchMoods]);
+    dispatch(fetchMoods({ isActive: true }));
+  }, [dispatch]);
 
   const total = homeCategories.length;
   const isSlider = total > 5;

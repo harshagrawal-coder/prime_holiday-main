@@ -1,40 +1,30 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
 import { FaArrowLeft, FaArrowRight, FaClock, FaTag } from "react-icons/fa";
+import { useDispatch, useSelector } from "react-redux";
 import LazyImage from "../components/ui/LazyImage";
 import { mapBlog } from "../utils/blogUtils";
-import axios from "axios";
-import { API_URI } from "../config/config";
+import { fetchBlogs, fetchBlogBySlug } from "../redux/slices/blogSlice";
 
 const BlogDetailsPage = () => {
   const { slug } = useParams();
-  const [post, setPost] = useState(null);
-  const [relatedPosts, setRelatedPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const dispatch = useDispatch();
+  const { item: rawPost, items, loading } = useSelector((state) => state.blog);
+
+  const post = useMemo(() => (rawPost ? mapBlog(rawPost) : null), [rawPost]);
+
+  const relatedPosts = useMemo(() => {
+    if (!post) return [];
+    return items
+      .map(mapBlog)
+      .filter((item) => item.slug !== post.slug && item.category === post.category)
+      .slice(0, 3);
+  }, [items, post]);
+
   useEffect(() => {
-    const fetchBlog = async () => {
-      try {
-        const response = await axios.get(`${API_URI}/blog/slug/${slug}`);
-        const blog = mapBlog(response.data.data);
-        setPost(blog);
-        const listResponse = await axios.get(`${API_URI}/blog`);
-        const allPosts = (listResponse.data.data || []).map(mapBlog);
-        setRelatedPosts(
-          allPosts
-            .filter(
-              (item) =>
-                item.slug !== blog.slug && item.category === blog.category
-            )
-            .slice(0, 3)
-        );
-      } catch (error) {
-        console.log(error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchBlog();
-  }, [slug]);
+    dispatch(fetchBlogBySlug(slug));
+    dispatch(fetchBlogs());
+  }, [dispatch, slug]);
   if (loading) {
     return (
       <section className="mx-auto max-w-4xl px-4 py-28 text-center sm:px-6">

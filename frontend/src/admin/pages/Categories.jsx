@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { API_URI } from "../../config/config.js";
 import {
   FaThList,
   FaEdit,
@@ -9,9 +8,17 @@ import {
   FaToggleOn,
   FaToggleOff,
 } from "react-icons/fa";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchAdminBlogCategories,
+  createBlogCategory,
+  updateBlogCategory,
+  deleteBlogCategory,
+} from "../../redux/slices/blogCategorySlice";
 
 const Categories = () => {
-  const [items, setItems] = useState([]);
+  const dispatch = useDispatch();
+  const { adminItems: items } = useSelector((state) => state.blogCategory);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({ name: "" });
@@ -28,33 +35,11 @@ const Categories = () => {
       return;
     }
     try {
-      const token = localStorage.getItem("token");
-      const method = editingId ? "PUT" : "POST";
-      const url = editingId
-        ? `${API_URI}/blogCategory/${editingId}`
-        : `${API_URI}/blogCategory`;
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ name: formData.name }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(
-          data.message ||
-            (editingId ? "Failed to update category" : "Failed to create category"),
-        );
-      }
-      if (editingId) {
-        setItems((prev) =>
-          prev.map((item) => (item._id === editingId ? data.data : item)),
-        );
-      } else {
-        setItems((prev) => [data.data, ...prev]);
+      const result = editingId
+        ? await dispatch(updateBlogCategory({ id: editingId, data: { name: formData.name } }))
+        : await dispatch(createBlogCategory({ name: formData.name }));
+      if (result.error) {
+        throw new Error(result.payload || (editingId ? "Failed to update category" : "Failed to create category"));
       }
       closeModal();
     } catch (error) {
@@ -64,30 +49,15 @@ const Categories = () => {
     }
   };
 
-  const fetchItems = async (isActive) => {
-    try {
-      const token = localStorage.getItem("token");
-      let url = `${API_URI}/blogCategory/admin/all`;
-      if (isActive !== undefined) {
-        url = `${url}?isActive=${isActive}`;
-      }
-      const response = await fetch(url, {
-        method: "get",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to fetch categories");
-      }
-      setItems(data.data);
-    } catch (error) {
-      console.log(error.message);
-    }
+  const fetchItems = (isActive) => {
+    dispatch(fetchAdminBlogCategories(
+      isActive !== undefined ? { isActive } : undefined,
+    ));
   };
 
   useEffect(() => {
     fetchItems();
-  }, []);
+  }, [dispatch]);
 
   const handleDelete = async (id) => {
     const confirmDelete = window.confirm(
@@ -95,12 +65,7 @@ const Categories = () => {
     );
     if (!confirmDelete) return;
     try {
-      const token = localStorage.getItem("token");
-      await fetch(`${API_URI}/blogCategory/${id}`, {
-        method: "delete",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setItems((prev) => prev.filter((item) => item._id !== id));
+      dispatch(deleteBlogCategory(id));
     } catch (error) {
       console.log(error.message);
     }
@@ -108,27 +73,13 @@ const Categories = () => {
 
   const toggleStatus = async (id, current) => {
     try {
-      const newStatus = !current;
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_URI}/blogCategory/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ isActive: newStatus }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to update category status");
+      const result = await dispatch(
+        updateBlogCategory({ id, data: { isActive: !current } }),
+      );
+      if (result.error) {
+        throw new Error(result.payload || "Failed to update category status");
       }
-      if (activeFilter === "all") {
-        fetchItems();
-      } else if (activeFilter === "active") {
-        fetchItems(true);
-      } else {
-        fetchItems(false);
-      }
+      fetchItems(activeFilter === "all" ? undefined : activeFilter === "active");
     } catch (error) {
       console.log(error.message);
     }

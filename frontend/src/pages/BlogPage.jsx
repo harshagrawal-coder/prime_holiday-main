@@ -1,23 +1,24 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { FaArrowRight } from "react-icons/fa";
+import { useDispatch, useSelector } from "react-redux";
 import BlogGrid from "../components/blog/BlogGrid";
 import BlogHeroSection from "../components/blog/BlogHeroSection";
 import BlogSidebar from "../components/blog/BlogSidebar";
 import FeaturedPost from "../components/blog/FeaturedPost";
 import SearchBar from "../components/blog/SearchBar";
 import { buildCategoryOptions, mapBlog } from "../utils/blogUtils";
-import axios from "axios";
-import { API_URI } from "../config/config";
+import { fetchBlogs } from "../redux/slices/blogSlice";
+import { fetchBlogCategories } from "../redux/slices/blogCategorySlice";
 
 const INITIAL_VISIBLE = 6;
 const BlogPage = () => {
+  const dispatch = useDispatch();
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
-  const [blogPosts, setBlogPosts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { items: blogPosts, loading } = useSelector((state) => state.blog);
+  const { items: categories } = useSelector((state) => state.blogCategory);
 
   const mappedPosts = useMemo(() => blogPosts.map(mapBlog), [blogPosts]);
 
@@ -31,28 +32,10 @@ const BlogPage = () => {
     [mappedPosts]
   );
 
-  const fetchBlogs = async () => {
-    try {
-      const response = await axios.get(`${API_URI}/blog`);
-      setBlogPosts(response.data.data || []);
-    } catch (error) {
-      console.log(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-  const fetchCategories = async () => {
-    try {
-      const response = await axios.get(`${API_URI}/blogCategory`);
-      setCategories(response.data.data || []);
-    } catch (error) {
-      console.log(error.message);
-    }
-  };
   useEffect(() => {
-    fetchBlogs();
-    fetchCategories();
-  }, []);
+    dispatch(fetchBlogs());
+    dispatch(fetchBlogCategories());
+  }, [dispatch]);
   const filteredPosts = useMemo(() => {
     return mappedPosts.filter((post) => {
       const matchesCategory = activeCategory === "All" || post.category === activeCategory;

@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaCalendarAlt, FaMapMarkerAlt, FaUsers } from "react-icons/fa";
-import axios from "axios";
-import { API_URI } from "../../config/config";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchHeroImages } from "../../redux/slices/heroSlice";
 
-const images = [];
 const destinations = ["Manali", "Goa", "Jaipur", "Kerala", "Rishikesh", "Udaipur"];
 const HeroSection = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { items: images } = useSelector((state) => state.hero);
   const [index, setIndex] = useState(0);
-  const [images, setImage] = useState([])
   const [displayText, setDisplayText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [search, setSearch] = useState({
@@ -19,14 +19,9 @@ const HeroSection = () => {
     guests: 1,
   });
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const fetchImage = async () => {
-    const response = await axios.get(`${API_URI}/herohomepage?isActive=true`)
-    console.log(response.data.data)
-    setImage(response.data.data)
-  }
   useEffect(() => {
-    fetchImage()
-  }, [])
+    dispatch(fetchHeroImages({ isActive: true }));
+  }, [dispatch]);
   useEffect(() => {
     if (images.length === 0) return;
 

@@ -1,9 +1,14 @@
 import { useEffect, useState } from "react";
 import { FaPlus, FaTrash, FaTimes, FaChevronDown, FaChevronUp } from "react-icons/fa";
-import { API_URI } from "../../config/config";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom"
-import axios from "axios";
 import { toast } from "react-toastify";
+import { createTour } from "../../redux/slices/tourSlice";
+import { fetchRegions } from "../../redux/slices/regionSlice";
+import { fetchStates } from "../../redux/slices/stateSlice";
+import { fetchCities } from "../../redux/slices/citySlice";
+import { fetchMoods } from "../../redux/slices/moodSlice";
+import { fetchDurations } from "../../redux/slices/durationSlice";
 const initialState = {
   name: "",
   overview: "",
@@ -28,7 +33,12 @@ const inputClass =
 const labelClass = "mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-600";
 const AddTour = () => {
   const navigate = useNavigate()
-  const [tour, setTour] = useState([])
+  const dispatch = useDispatch()
+  const region = useSelector((s) => s.region.items);
+  const state = useSelector((s) => s.state.items);
+  const cities = useSelector((s) => s.city.items);
+  const mood = useSelector((s) => s.mood.items);
+  const duration = useSelector((s) => s.duration.items);
   const [formData, setFormData] = useState(initialState);
   const [activeSection, setActiveSection] = useState("basic");
   const [submitted, setSubmitted] = useState(false);
@@ -36,11 +46,6 @@ const AddTour = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newInclusion, setNewInclusion] = useState("");
   const [newExclusion, setNewExclusion] = useState("");
-  const [region, setRegions] = useState([])
-  const [cities, setCity] = useState([])
-  const [state, setState] = useState([])
-  const [mood, setMood] = useState([])
-  const [duration, setDuration] = useState([])
   const [gallery, setGallery] = useState([])
   const [banner, setBanner] = useState(null)
   const [thumbnail, setThumbnail] = useState(null)
@@ -55,105 +60,13 @@ const AddTour = () => {
     setSubmitted(false);
     setUploadError("");
   };
-  const fetchRegions = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_URI}/region?isActive=true`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to fetch regions");
-      }
-      setRegions(data.regions);
-    } catch (error) {
-      console.log(error.message);
-    }
-  };
-  const fetchState = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_URI}/state?isActive=true`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to fetch states");
-      }
-      setState(data.states);
-    } catch (error) {
-      console.log(error.message);
-    }
-  };
-  const fetchCity = async () => {
-    try {
-      const token = localStorage.getItem("token")
-      const response = await fetch(`${API_URI}/city?isActive=true`, {
-        method: "GET",
-        headers: {
-          authorization: `Bearer ${token}`
-        }
-      })
-      const data = await response.json()
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to fetch cities");
-      }
-      setCity(data.cities)
-    } catch (error) {
-      console.log(error.message)
-    }
-  }
-  const fetchMood = async () => {
-    try {
-      const token = localStorage.getItem("token")
-      const response = await fetch(`${API_URI}/mood?isActive=true`, {
-        method: "GET",
-        headers: {
-          authorization: `Bearer ${token}`
-        }
-      })
-      const data = await response.json()
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to fetch cities");
-      }
-      setMood(data.mood)
-    } catch (error) {
-      console.log(error.message)
-    }
-  }
-  const fetchDuration = async () => {
-    try {
-      const token = localStorage.getItem("token")
-      const response = await fetch(`${API_URI}/duration?isActive=true`, {
-        method: "GET",
-        headers: {
-          authorization: `Bearer ${token}`
-        }
-      })
-      const data = await response.json()
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to fetch duration");
-      }
-      setDuration(data.durations)
-    } catch (error) {
-      console.log(error.message)
-    }
-  }
   useEffect(() => {
-    fetchRegions()
-    fetchState()
-    fetchCity()
-    fetchDuration()
-    fetchMood()
-  }, [])
-  console.log(state[0]?.regionId);
-  console.log(cities[0]?.stateId);
+    dispatch(fetchRegions({ isActive: true }));
+    dispatch(fetchStates({ isActive: true }));
+    dispatch(fetchCities({ isActive: true }));
+    dispatch(fetchDurations({ isActive: true }));
+    dispatch(fetchMoods({ isActive: true }));
+  }, [dispatch])
   const handleRegionChange = (regionId) => {
     setFormData((current) => ({
       ...current,
@@ -251,13 +164,10 @@ const AddTour = () => {
       gallery.forEach((image) => {
         data.append("gallery", image)
       })
-      const token = localStorage.getItem("token")
-      const response = await axios.post(`${API_URI}/tour`, data, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`
-        },
-      })
+      const result = await dispatch(createTour(data));
+      if (result.error) {
+        throw new Error(result.payload || "Failed to create tour");
+      }
       toast.success("Tour created successfully")
       navigate("/admin/tours");
     } catch (error) {

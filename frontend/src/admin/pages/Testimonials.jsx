@@ -10,12 +10,19 @@ import {
   FaCheckCircle,
   FaMapMarkerAlt,
 } from "react-icons/fa";
-import { API_URI } from "../../config/config";
-import axios from "axios";
+import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
+import {
+  fetchAdminTestimonials,
+  createTestimonial,
+  updateTestimonial,
+  deleteTestimonial,
+  updateTestimonialStatus,
+} from "../../redux/slices/testimonialSlice";
 
 const Testimonials = () => {
-  const [items, setItems] = useState([])
+  const dispatch = useDispatch();
+  const { adminItems: items } = useSelector((state) => state.testimonial);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [imageFile, setImageFile] = useState(null);
@@ -34,18 +41,12 @@ const Testimonials = () => {
     if (activeFilter === "inactive") return !item.isActive;
     return true;
   });
-  const fetchtestimonial = async () => {
-    const token = localStorage.getItem("token")
-    const response = await axios.get(`${API_URI}/testimonial/admin/all`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    })
-    setItems(response.data.data)
-  }
+  const fetchtestimonial = () => {
+    dispatch(fetchAdminTestimonials());
+  };
   useEffect(() => {
-    fetchtestimonial()
-  }, [])
+    fetchtestimonial();
+  }, [dispatch]);
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!imageFile && !editingId) {
@@ -62,24 +63,11 @@ const Testimonials = () => {
       if (imageFile) {
         data.append("image", imageFile)
       }
-      const token = localStorage.getItem("token")
-      if (editingId) {
-        const response = await axios.put(`${API_URI}/testimonial/${editingId}`, data, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          }
-        })
-      } else {
-        const response = await axios.post(
-          `${API_URI}/testimonial`,
-          data,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+      const result = editingId
+        ? await dispatch(updateTestimonial({ id: editingId, data }))
+        : await dispatch(createTestimonial(data));
+      if (result.error) {
+        throw new Error(result.payload || "Failed to save testimonial");
       }
       await fetchtestimonial()
       closeModal()
@@ -98,12 +86,7 @@ const Testimonials = () => {
       if (!confirmDelete) {
         return;
       }
-      const token = localStorage.getItem("token")
-      const response = await axios.delete(`${API_URI}/testimonial/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      })
+      await dispatch(deleteTestimonial(id));
       toast.success("Deleted successfully")
       await fetchtestimonial()
     } catch (error) {
@@ -115,13 +98,10 @@ const Testimonials = () => {
   const handleToggleStatus = async (id, currentStatus) => {
     try {
       let newStatus = !currentStatus
-      const token = localStorage.getItem("token")
-      const response = await axios.patch(`${API_URI}/testimonial/${id}/status`, { isActive: newStatus }, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-
-        }
-      })
+      const result = await dispatch(updateTestimonialStatus({ id, isActive: newStatus }));
+      if (result.error) {
+        throw new Error(result.payload || "Failed to update status");
+      }
       await fetchtestimonial()
     } catch (error) {
       console.log(error.response?.data);

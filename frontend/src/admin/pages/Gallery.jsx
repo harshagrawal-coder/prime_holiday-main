@@ -9,11 +9,19 @@ import {
   FaToggleOff,
   FaUpload,
 } from "react-icons/fa";
-import { API_URI } from "../../config/config";
-import axios from "axios";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchAdminGallery,
+  createGalleryItem,
+  updateGalleryItem,
+  deleteGalleryItem,
+} from "../../redux/slices/gallerySlice";
+import { fetchMoods } from "../../redux/slices/moodSlice";
 
 const Gallery = () => {
-  const [items, setItems] = useState([]);
+  const dispatch = useDispatch();
+  const { adminItems: items } = useSelector((state) => state.gallery);
+  const moods = useSelector((state) => state.mood.items);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({
@@ -25,44 +33,22 @@ const Gallery = () => {
   });
   const [error, setError] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
-  const [moods, setMoods] = useState([]);
   const [search, setSearch] = useState("");
   const [activeFilterValue, setActiveFilterValue] = useState(undefined);
   const fileInputRef = useRef(null);
 
-  const fetchGallery = async (isActive) => {
-    const token = localStorage.getItem("token");
-    try {
-      const params = {};
-      const activeParam = isActive !== undefined ? isActive : activeFilterValue;
-      if (activeParam !== undefined) params.isActive = activeParam;
-      if (search.trim()) params.search = search.trim();
-      const response = await axios.get(`${API_URI}/gallery/admin/all`, {
-        headers: { authorization: `Bearer ${token}` },
-        params,
-      });
-      setItems(response.data.data);
-    } catch (error) {
-      setError(error.response?.data?.message || error.message);
-    }
-  };
-
-  const fetchMoods = async () => {
-    const token = localStorage.getItem("token");
-    try {
-      const response = await axios.get(`${API_URI}/mood`, {
-        headers: { authorization: `Bearer ${token}` },
-      });
-      setMoods(response.data.mood || []);
-    } catch (error) {
-      console.log(error.response?.data?.message || error.message);
-    }
+  const fetchGallery = (isActive) => {
+    const params = {};
+    const activeParam = isActive !== undefined ? isActive : activeFilterValue;
+    if (activeParam !== undefined) params.isActive = activeParam;
+    if (search.trim()) params.search = search.trim();
+    dispatch(fetchAdminGallery(params));
   };
 
   useEffect(() => {
     fetchGallery();
-    fetchMoods();
-  }, []);
+    dispatch(fetchMoods());
+  }, [dispatch]);
 
   useEffect(() => {
     const timer = setTimeout(() => fetchGallery(), 300);
@@ -71,11 +57,10 @@ const Gallery = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem("token");
     try {
-      const headers = { Authorization: `Bearer ${token}` };
       if (editingId) {
         const hasNewImage = formData.images.length > 0;
+        let result;
         if (hasNewImage) {
           const fd = new FormData();
           fd.append("image", formData.images[0].file);
@@ -83,19 +68,17 @@ const Gallery = () => {
           fd.append("order", formData.order || 0);
           fd.append("title", formData.title);
           fd.append("location", formData.location);
-          const response = await axios.put(`${API_URI}/gallery/${editingId}`, fd, { headers });
-          setItems((prev) =>
-            prev.map((item) => (item._id === editingId ? response.data.data : item))
-          );
+          result = await dispatch(updateGalleryItem({ id: editingId, data: fd }));
         } else {
-          const response = await axios.put(
-            `${API_URI}/gallery/${editingId}`,
-            { moodId: formData.moodId, order: Number(formData.order) || 0, title: formData.title, location: formData.location },
-            { headers }
+          result = await dispatch(
+            updateGalleryItem({
+              id: editingId,
+              data: { moodId: formData.moodId, order: Number(formData.order) || 0, title: formData.title, location: formData.location },
+            }),
           );
-          setItems((prev) =>
-            prev.map((item) => (item._id === editingId ? response.data.data : item))
-          );
+        }
+        if (result.error) {
+          throw new Error(result.payload || "Failed to update gallery image");
         }
       } else {
         const fd = new FormData();
@@ -104,24 +87,22 @@ const Gallery = () => {
         fd.append("title", formData.title);
         fd.append("location", formData.location);
         formData.images.forEach((item) => fd.append("images", item.file));
-        const response = await axios.post(`${API_URI}/gallery`, fd, { headers });
-        setItems((prev) => [...response.data.data, ...prev]);
+        const result = await dispatch(createGalleryItem(fd));
+        if (result.error) {
+          throw new Error(result.payload || "Failed to add gallery image");
+        }
       }
       closeModal();
     } catch (error) {
-      setError(error.response?.data?.message || error.message);
+      setError(error.message);
     }
   };
 
   const handleDelete = async (id) => {
     const confirmDelete = window.confirm("Delete this gallery image?");
     if (!confirmDelete) return;
-    const token = localStorage.getItem("token");
     try {
-      await axios.delete(`${API_URI}/gallery/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setItems((prev) => prev.filter((item) => item._id !== id));
+      dispatch(deleteGalleryItem(id));
     } catch (error) {
       setError(error.response?.data?.message || error.message);
     }
@@ -129,23 +110,14 @@ const Gallery = () => {
 
   const toggleStatus = async (id, current) => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.put(
-        `${API_URI}/gallery/${id}`,
-        { isActive: !current },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      const result = await dispatch(
+        updateGalleryItem({ id, data: { isActive: !current } }),
       );
-      if (activeFilter === "all") {
-        setItems((prev) =>
-          prev.map((item) => (item._id === id ? response.data.data : item))
-        );
-      } else {
-        setItems((prev) => prev.filter((item) => item._id !== id));
+      if (result.error) {
+        throw new Error(result.payload || "Failed to update status");
+      }
+      if (activeFilter !== "all") {
+        fetchGallery(activeFilter === "active");
       }
     } catch (error) {
       console.log(error.response?.data?.message || error.message);

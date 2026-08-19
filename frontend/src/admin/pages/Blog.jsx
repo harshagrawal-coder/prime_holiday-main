@@ -1,66 +1,25 @@
 import { useEffect, useState } from "react";
 import { FaSearch, FaPlus, FaEdit, FaTrash, FaImage } from "react-icons/fa";
-import axios from "axios";
-import { API_URI } from "../../config/config.js";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { fetchAdminBlogs, deleteBlog } from "../../redux/slices/blogSlice";
+import { fetchAdminBlogCategories } from "../../redux/slices/blogCategorySlice";
 const Blog = () => {
   const navigate = useNavigate()
-  const [blogs, setBlogs] = useState([]);
-  const [categories, setCategories] = useState([])
+  const dispatch = useDispatch()
+  const { adminItems: blogs } = useSelector((state) => state.blog);
+  const { adminItems: categories } = useSelector((state) => state.blogCategory);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
-  // const [showModal, setShowModal] = useState(false);
-  // const [editingId, setEditingId] = useState(null);
-  // const [imagePreview, setImagePreview] = useState("");
-  // const [formData, setFormData] = useState({
-  //   title: "",
-  //   category: "",
-  //   author: "",
-  //   readTime: "",
-  //   excerpt: "",
-  //   content: "",
-  //   image: null,
-  //   seoTitle: "",
-  //   seoDescription: "",
-  // });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
   };
-  const fetchBlog = async () => {
-    try {
-      const token = localStorage.getItem("token")
-      const response = await axios.get(`${API_URI}/blog/admin/all`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        },
-      })
-      setBlogs(response.data.data)
-    } catch (error) {
-      console.log(error)
-    }
-  }
-  const fetchBlogCategories = async () => {
-    try {
-      const token = localStorage.getItem("token")
-      const response = await axios.get(`${API_URI}/blogCategory/admin/all?isActive=true`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      })
-      setCategories(response.data.data)
-
-    } catch (error) {
-      console.log(error.message)
-    }
-  }
-
   useEffect(() => {
-    fetchBlogCategories()
-    fetchBlog()
-
-  }, [])
+    dispatch(fetchAdminBlogCategories({ isActive: true }));
+    dispatch(fetchAdminBlogs());
+  }, [dispatch])
   const filteredBlogs = blogs.filter(b => {
     const matchesSearch = !search || b.title?.toLowerCase().includes(search.toLowerCase());
    const matchesCategory =
@@ -70,15 +29,7 @@ const Blog = () => {
 
   const handleDelete = async (id) => {
     try {
-      const token = localStorage.getItem("token")
-      const response = await axios.delete(`${API_URI}/blog/${id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      )
-      setBlogs((prev) => prev.filter(item => item._id != id))
+      await dispatch(deleteBlog(id));
       toast.success("Blog deleted successfully");
     }
     catch (error) {

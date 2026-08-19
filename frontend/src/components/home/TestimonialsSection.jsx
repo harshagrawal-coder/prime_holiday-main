@@ -1,32 +1,30 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { FaArrowLeft, FaArrowRight, FaCheckCircle } from "react-icons/fa";
+import { useDispatch, useSelector } from "react-redux";
 import { useTestimonialSlider } from "../../hooks/useTestimonialSlider";
 import TestimonialCard from "./TestimonialCard";
-import axios from "axios";
-import { API_URI } from "../../config/config";
+import { fetchTestimonials } from "../../redux/slices/testimonialSlice";
 
 const TestimonialsSection = () => {
-  const [testimonials, setTestimonials] = useState([]);
+  const dispatch = useDispatch();
+  const { items } = useSelector((state) => state.testimonial);
+
+  const testimonials = useMemo(
+    () =>
+      items.map((item) => ({
+        name: item.name,
+        location: item.location,
+        text: item.text,
+        rating: item.rating || 5,
+        image: item.image?.url || "https://i.pravatar.cc/160?img=12",
+      })),
+    [items]
+  );
 
   useEffect(() => {
-    const fetchTestimonials = async () => {
-      try {
-        const response = await axios.get(`${API_URI}/testimonial`);
-        const data = (response.data.testimonials || []).map((item) => ({
-          name: item.name,
-          location: item.location,
-          text: item.text,
-          rating: item.rating || 5,
-          image: item.image?.url || "https://i.pravatar.cc/160?img=12",
-        }));
-        setTestimonials(data);
-      } catch (error) {
-        console.error("Failed to fetch testimonials", error);
-      }
-    };
-    fetchTestimonials();
-  }, []);
+    dispatch(fetchTestimonials());
+  }, [dispatch]);
 
   const {
     index,

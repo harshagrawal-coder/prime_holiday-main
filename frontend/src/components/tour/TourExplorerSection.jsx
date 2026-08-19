@@ -2,22 +2,28 @@ import { useEffect, useMemo, useState } from "react";
 import { FaFilter, FaTimes } from "react-icons/fa";
 import { motion } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import { useTourFilters } from "../../hooks/useTourFilters";
 import TourFiltersContent from "./TourFiltersContent";
 import TourGrid from "./TourGrid";
 import TourHeroBanner from "./TourHeroBanner";
 import TourResultsHeader from "./TourResultsHeader";
-import axios from "axios"
-import { API_URI } from "../../config/config"
+import { fetchTours } from "../../redux/slices/tourSlice";
+import { fetchDurations } from "../../redux/slices/durationSlice";
+import { fetchRegions } from "../../redux/slices/regionSlice";
+import { fetchStates } from "../../redux/slices/stateSlice";
+import { fetchCities } from "../../redux/slices/citySlice";
+import { fetchMoods } from "../../redux/slices/moodSlice";
 
 const TourExplorerSection = () => {
-  const [tours, setTours] = useState([]);
+  const dispatch = useDispatch();
+  const { items: tours } = useSelector((state) => state.tour);
+  const { items: durations } = useSelector((state) => state.duration);
+  const { items: regions } = useSelector((state) => state.region);
+  const { items: moods } = useSelector((state) => state.mood);
+  const { items: city } = useSelector((state) => state.city);
+  const { items: states } = useSelector((state) => state.state);
   const [loading, setLoading] = useState(true);
-  const [durations, setDurations] = useState([])
-  const [regions, setRegions] = useState([]);
-  const [moods, setMoods] = useState([]);
-  const [city, setCity] = useState([])
-  const [states, setStates] = useState([])
   const [searchParams, setSearchParams] = useSearchParams();
   const activeCategoryFromUrl = useMemo(
     () => searchParams.get("category")?.toLowerCase() || "",
@@ -51,84 +57,6 @@ const TourExplorerSection = () => {
 
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
-  const fetchTours = async () => {
-    try {
-      const token = localStorage.getItem("token")
-      const response = await axios.get(`${API_URI}/tour`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      })
-      setTours(response.data.data)
-    } catch (error) {
-      console.log(error.message)
-    }
-  }
-  const fetchDuration = async () => {
-    try {
-      const token = localStorage.getItem("token")
-      const response = await axios.get(`${API_URI}/duration`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      })
-      setDurations(response.data.durations)
-    } catch (error) {
-      console.log(error.message)
-    }
-  }
-  const fetchRegion = async () => {
-    try {
-      const token = localStorage.getItem("token")
-      const response = await axios.get(`${API_URI}/region`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      })
-      setRegions(response.data.regions)
-    } catch (error) {
-      console.log(error.message)
-    }
-  }
-  const fetchCity = async () => {
-    try {
-      const token = localStorage.getItem("token")
-      const response = await axios.get(`${API_URI}/city`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      })
-      setCity(response.data.cities)
-    } catch (error) {
-      console.log(error.message)
-    }
-  }
-  const fetchMood = async () => {
-    try {
-      const token = localStorage.getItem("token")
-      const response = await axios.get(`${API_URI}/mood`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      })
-      setMoods(response.data.mood)
-    } catch (error) {
-      console.log(error.message)
-    }
-  }
-  const fetchState = async () => {
-    try {
-      const token = localStorage.getItem("token")
-      const response = await axios.get(`${API_URI}/state`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      })
-      setStates(response.data.states)
-    } catch (error) {
-      console.log(error.message)
-    }
-  }
   // useEffect(() => {
   //   tours.forEach((tour) => {
   //     if (tour.image) {
@@ -141,17 +69,17 @@ const TourExplorerSection = () => {
     const fetchData = async () => {
       setLoading(true);
       await Promise.all([
-        fetchTours(),
-        fetchDuration(),
-        fetchRegion(),
-        fetchState(),
-        fetchCity(),
-        fetchMood(),
+        dispatch(fetchTours()),
+        dispatch(fetchDurations()),
+        dispatch(fetchRegions()),
+        dispatch(fetchStates()),
+        dispatch(fetchCities()),
+        dispatch(fetchMoods()),
       ]);
       setLoading(false);
     };
     fetchData();
-  }, []);
+  }, [dispatch]);
   const updateCategoryInUrl = (value) => {
     const nextParams = new URLSearchParams(searchParams);
     if (value === "All Vibes") {

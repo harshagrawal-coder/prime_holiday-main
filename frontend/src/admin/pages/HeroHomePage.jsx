@@ -9,11 +9,17 @@ import {
   FaToggleOff,
   FaUpload,
 } from "react-icons/fa";
-import axios from "axios";
-import { API_URI } from "../../config/config";
+import { useDispatch, useSelector } from "react-redux";
 import { useEffect } from "react";
+import {
+  fetchAdminHeroImages,
+  createHeroImage,
+  updateHeroImage,
+  deleteHeroImage,
+} from "../../redux/slices/heroSlice";
 const HeroHomePage = () => {
-  const [items, setItems] = useState([]);
+  const dispatch = useDispatch();
+  const { adminItems: items } = useSelector((state) => state.hero);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   // const [imageFile,setImageFile] = useState("")
@@ -31,19 +37,9 @@ const HeroHomePage = () => {
     if (activeFilter === "inactive") return !item.isActive;
     return true;
   });
-  const fetchHeroImage = async () => {
-    const token = localStorage.getItem("token");
-    const response = await axios.get(`${API_URI}/herohomepage/admin/all`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "multipart/form-data",
-      },
-    });
-    setItems(response.data.data);
-  };
   useEffect(() => {
-    fetchHeroImage();
-  }, []);
+    dispatch(fetchAdminHeroImages());
+  }, [dispatch]);
   const handleSubmit = async (e) => {
     e.preventDefault();
     const data = new FormData();
@@ -53,49 +49,31 @@ const HeroHomePage = () => {
     if (formData.images.length > 0) {
       data.append("image", formData.images[0].file);
     }
-    const token = localStorage.getItem("token");
-    if (editingId) {
-      const response = await axios.put(
-        `${API_URI}/herohomepage/${editingId}`,
-        data,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        },
-      );
-    } else {
-      const response = await axios.post(`${API_URI}/herohomepage`, data, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
-      });
+    const result = editingId
+      ? await dispatch(updateHeroImage({ id: editingId, data }))
+      : await dispatch(createHeroImage(data));
+    if (result.error) {
+      setError(result.payload || "Failed to save hero image");
+      return;
     }
-    await fetchHeroImage();
+    await dispatch(fetchAdminHeroImages());
     closeModal();
   };
   const handleDelete = async (id) => {
     const confirmDelete = window.confirm("Delete this hero image?");
     if (!confirmDelete) return;
-    const token = localStorage.getItem("token");
-    const response = await axios.delete(`${API_URI}/herohomepage/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    setItems((prev) => prev.filter((item) => item._id !== id));
+    await dispatch(deleteHeroImage(id));
   };
 
-  const toggleStatus = (id, current) => {
-    setItems((prev) =>
-      activeFilter === "all"
-        ? prev.map((item) =>
-            item._id === id ? { ...item, isActive: !current } : item,
-          )
-        : prev.filter((item) => item._id !== id),
+  const toggleStatus = async (id, current) => {
+    const result = await dispatch(
+      updateHeroImage({ id, data: { isActive: String(!current) } }),
     );
+    if (result.error) {
+      setError(result.payload || "Failed to update status");
+    } else if (activeFilter !== "all") {
+      dispatch(fetchAdminHeroImages());
+    }
   };
 
   const openModal = (item = null) => {

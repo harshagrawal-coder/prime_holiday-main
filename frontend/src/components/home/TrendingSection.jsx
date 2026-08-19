@@ -2,8 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaArrowLeft, FaArrowRight, FaFire } from "react-icons/fa";
 import { motion } from "framer-motion";
-import axios from "axios";
-import { API_URI } from "../../config/config";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchTours } from "../../redux/slices/tourSlice";
 import TourCard from "../tour/TourCard";
 
 const getCardsPerView = (width) => {
@@ -13,12 +13,17 @@ const getCardsPerView = (width) => {
 };
 const TrendingSection = () => {
   const navigate = useNavigate();
-  const [trendingTours, setTrendingTours] = useState([]);
+  const dispatch = useDispatch();
+  const { items: trendingTours } = useSelector((state) => state.tour);
   const [index, setIndex] = useState(0);
   const [cardsPerView, setCardsPerView] = useState(3);
   const containerRef = useRef(null);
   const trackRef = useRef(null);
   const cardRefs = useRef([]);
+
+  useEffect(() => {
+    dispatch(fetchTours({ trending: true }));
+  }, [dispatch]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -45,18 +50,6 @@ const TrendingSection = () => {
   useEffect(() => {
     measureTranslate();
   }, [cardsPerView, measureTranslate]);
-
-  useEffect(() => {
-    const fetchTours = async () => {
-      try {
-        const response = await axios.get(`${API_URI}/tour?trending=true`);
-        setTrendingTours(response.data.data);
-      } catch (err) {
-        console.error("Failed to fetch trending tours", err);
-      }
-    };
-    fetchTours();
-  }, []);
 
   const handlePrev = () => setIndex((prev) => Math.max(prev - 1, 0));
   const handleNext = () => setIndex((prev) => Math.min(prev + 1, maxIndex));

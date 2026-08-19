@@ -34,7 +34,7 @@ const SecurityCard = () => (
       </div>
     </div>
 
-    <div className="mt-7 grid gap-4 sm:grid-cols-3">
+    <div className="mt-5 grid gap-4 sm:grid-cols-3">
       {items.map(({ icon: Icon, label, desc }) => (
         <div
           key={label}

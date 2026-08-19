@@ -48,10 +48,10 @@ const TravelerDetails = ({ primary, onPrimaryChange, travelers, onTravelersChang
       </div>
 
       {/* Primary Contact */}
-      <h3 className="mt-7 text-sm font-black uppercase tracking-[0.2em] text-slate-800">
+      <h3 className="mt-5 text-sm font-black uppercase tracking-[0.2em] text-slate-800">
         Primary Contact
       </h3>
-      <div className="mt-4 grid gap-5 md:grid-cols-2">
+      <div className="mt-3 grid gap-4 md:grid-cols-2">
         <Field label="Full Name *" error={errors.fullName}>
           <input
             type="text"
@@ -109,10 +109,10 @@ const TravelerDetails = ({ primary, onPrimaryChange, travelers, onTravelersChang
       </div>
 
       {/* All Travelers */}
-      <h3 className="mt-8 text-sm font-black uppercase tracking-[0.2em] text-slate-800">
+      <h3 className="mt-5 text-sm font-black uppercase tracking-[0.2em] text-slate-800">
         All Travelers
       </h3>
-      <div className="mt-4 grid gap-4">
+      <div className="mt-3 grid gap-3">
         {travelers.map((traveler, index) => (
           <TravelerCard
             key={index}
@@ -127,7 +127,7 @@ const TravelerDetails = ({ primary, onPrimaryChange, travelers, onTravelersChang
       <button
         type="button"
         onClick={addTraveler}
-        className="mt-5 inline-flex items-center gap-2 rounded-full border border-dashed border-orange-300 bg-orange-50/60 px-6 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-orange-600 transition-all duration-300 hover:border-orange-500 hover:bg-orange-100"
+        className="mt-4 inline-flex items-center gap-2 rounded-full border border-dashed border-orange-300 bg-orange-50/60 px-6 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-orange-600 transition-all duration-300 hover:border-orange-500 hover:bg-orange-100"
       >
         <UserPlus size={14} /> Add Another Traveler
       </button>

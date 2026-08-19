@@ -1,28 +1,23 @@
 import { Link, useParams } from "react-router-dom";
-import toursData from "../data/toursData.json";
+import { useDispatch, useSelector } from "react-redux";
 import TourDetail from "../components/tour/TourDetail";
-import axios from "axios";
-import { API_URI } from "../config/config";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { fetchTourBySlug, fetchSimilarTours } from "../redux/slices/tourSlice";
 
 const TourDetailsPage = () => {
   const { slug } = useParams();
-  const [tour, setTour] = useState(null)
-  const [relatedTours, setRelatedTours] = useState([])
-  const fetchTour = async () => {
-    const res = await axios.get(`${API_URI}/tour/slug/${slug}`);
-    setTour(res.data.data);
-    await fetchSimilarTour(res.data.data._id);
-  };
+  const dispatch = useDispatch();
+  const { item: tour, similarItems: relatedTours } = useSelector(
+    (state) => state.tour
+  );
 
-  const fetchSimilarTour = async (id) => {
-    const token = localStorage.getItem("token")
-    const response = await axios.get(`${API_URI}/tour/${id}/similar`)
-    setRelatedTours(response.data.data)
-  }
   useEffect(() => {
-    fetchTour();
-  }, [slug]);
+    dispatch(fetchTourBySlug(slug)).then((result) => {
+      if (fetchTourBySlug.fulfilled.match(result) && result.payload.data?._id) {
+        dispatch(fetchSimilarTours(result.payload.data._id));
+      }
+    });
+  }, [dispatch, slug]);
   if (!tour) {
     return (
       <section className="relative overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-orange-950 py-28">

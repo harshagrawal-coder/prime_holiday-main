@@ -82,7 +82,7 @@ const BookingPage = () => {
   });
   const [travelers, setTravelers] = useState([]);
   const [travel, setTravel] = useState({
-    departureDate: "", adults: 1, children: 0, specialRequest: ""
+    departureDate: "", adults: 1, children: 0, pickupLocation: "", specialRequest: ""
   });
   const [payment, setPayment] = useState({ paymentType: "full" });
 
@@ -209,14 +209,14 @@ const BookingPage = () => {
       <main className="mx-auto max-w-[1400px] px-6 pb-16 pt-24 md:pt-28">
         <BookingHeader tour={tour} />
 
-        <div className="mt-12 grid items-start gap-10 lg:mt-16 lg:grid-cols-[minmax(0,1fr)_350px]">
+        <div className="mt-8 grid items-start gap-6 lg:mt-12 lg:grid-cols-[minmax(0,1fr)_350px]">
           {/* Left column: booking form */}
           <form
             ref={formRef}
             id="booking-form"
             onSubmit={handleSubmit}
             noValidate
-            className="w-full min-w-0 scroll-mt-24 space-y-8"
+            className="w-full min-w-0 scroll-mt-24 space-y-5"
           >
             <TravelerDetails
               primary={primary}
@@ -248,7 +248,7 @@ const BookingPage = () => {
           </form>
 
           {/* Right sticky sidebar ~30% */}
-          <aside className="w-full space-y-6 lg:sticky lg:top-8 lg:-mt-24">
+          <aside className="w-full space-y-4 lg:sticky lg:top-8 lg:-mt-24">
             {pricing && (
               <BookingSummary
                 tour={tour}

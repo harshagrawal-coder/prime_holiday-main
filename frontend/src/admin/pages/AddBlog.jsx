@@ -1,8 +1,13 @@
 import { useEffect, useState } from "react";
-import { API_URI } from "../../config/config.js"
-import axios from "axios"
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom"
 import { toast } from "react-toastify";
+import {
+  fetchBlogById,
+  createBlog,
+  updateBlog,
+} from "../../redux/slices/blogSlice";
+import { fetchAdminBlogCategories } from "../../redux/slices/blogCategorySlice";
 const initialState = {
   title: "",
   category: "",
@@ -21,8 +26,11 @@ const inputClassName =
 
 const AddBlog = () => {
   const navigate = useNavigate()
+  const dispatch = useDispatch()
   const { id } = useParams()
   const isEditMode = Boolean(id)
+  const { adminItems: categories } = useSelector((state) => state.blogCategory);
+  const blogItem = useSelector((state) => state.blog.item);
   const [formData, setFormData] = useState(initialState);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
@@ -30,56 +38,30 @@ const AddBlog = () => {
   const [uploadError, setUploadError] = useState("");
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [categories, setCategories] = useState([])
-  const fetchBlogCategories = async () => {
-    try {
-      const token = localStorage.getItem("token")
-      const response = await axios.get(`${API_URI}/blogCategory/admin/all?isActive=true`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      })
-      setCategories(response.data.data)
-
-    } catch (error) {
-      console.log(error.message)
+  useEffect(() => {
+    dispatch(fetchAdminBlogCategories({ isActive: true }));
+    if (isEditMode) {
+      dispatch(fetchBlogById(id));
     }
-  }
-  const fetchBlogById = async () => {
-    try {
-      const token = localStorage.getItem("token")
-      const response = await axios.get(`${API_URI}/blog/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      })
-      const data = response.data.data
+  }, [dispatch, id, isEditMode]);
+  useEffect(() => {
+    if (isEditMode && blogItem) {
       setFormData({
-        title: data.title,
-        category: data.categoryId._id,
-        author: data.authorName,
-        excerpt: data.excerpt,
-        content: data.content,
-        featured: data.featured,
-        popular: data.popular,
-        isActive: data.isActive,
-        status: data.status || "published",
+        title: blogItem.title,
+        category: blogItem.categoryId._id,
+        author: blogItem.authorName,
+        excerpt: blogItem.excerpt,
+        content: blogItem.content,
+        featured: blogItem.featured,
+        popular: blogItem.popular,
+        isActive: blogItem.isActive,
+        status: blogItem.status || "published",
       })
       setImagePreview(
-        data.coverImage.url
+        blogItem.coverImage.url
       )
-    } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
-      console.log(error.response?.data);
     }
-  }
-  useEffect(() => {
-    fetchBlogCategories()
-    if (isEditMode) {
-      fetchBlogById();
-    }
-
-  }, [id])
+  }, [blogItem, isEditMode])
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
     setFormData((current) => ({
@@ -170,20 +152,14 @@ const AddBlog = () => {
       data.append("image", imageFile)
     }
     try {
-      const token = localStorage.getItem("token")
-      let response;
+      let result;
       if (isEditMode) {
-        response = await axios.put(`${API_URI}/blog/${id}`, data, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        })
+        result = await dispatch(updateBlog({ id, data }));
       } else {
-        response = await axios.post(`${API_URI}/blog`, data, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        })
+        result = await dispatch(createBlog(data));
+      }
+      if (result.error) {
+        throw new Error(result.payload || "Failed to save blog");
       }
       toast.success(
         isEditMode

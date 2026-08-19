@@ -1,24 +1,21 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { FaArrowRight } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import SectionHeading from "../ui/SectionHeading";
 import { mapBlog } from "../../utils/blogUtils";
 import LazyImage from "../ui/LazyImage";
-import axios from "axios";
-import { API_URI } from "../../config/config";
+import { fetchBlogs } from "../../redux/slices/blogSlice";
 const BlogSection = () => {
-  const [homeBlogs, setHomeBlogs] = useState([]);
+  const dispatch = useDispatch();
+  const { items } = useSelector((state) => state.blog);
+  const homeBlogs = useMemo(
+    () => items.map(mapBlog).slice(0, 3),
+    [items]
+  );
   useEffect(() => {
-    const fetchBlogs = async () => {
-      try {
-        const response = await axios.get(`${API_URI}/blog?featured=true`);
-        setHomeBlogs((response.data.data || []).map(mapBlog).slice(0, 3));
-      } catch (error) {
-        console.log(error.message);
-      }
-    };
-    fetchBlogs();
-  }, []);
+    dispatch(fetchBlogs({ featured: true }));
+  }, [dispatch]);
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">

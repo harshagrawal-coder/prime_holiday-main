@@ -1,29 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import GalleryHeroSection from "../components/gallery/GalleryHeroSection";
 import FilterBar from "../components/gallery/FilterBar";
 import GalleryGrid from "../components/gallery/GalleryGrid";
 import Lightbox from "../components/gallery/Lightbox";
 import FeaturedDestinationsRow from "../components/gallery/FeaturedDestinationsRow";
 import GalleryCTASection from "../components/gallery/GalleryCTASection";
-import axios from "axios";
-import { API_URI } from "../config/config";
+import { fetchGallery } from "../redux/slices/gallerySlice";
 
 const GalleryPage = () => {
-  const [items, setItems] = useState([]);
+  const dispatch = useDispatch();
+  const { items } = useSelector((state) => state.gallery);
   const [activeCategory, setActiveCategory] = useState("All");
   const [activeItem, setActiveItem] = useState(null);
 
   useEffect(() => {
-    const fetchGallery = async () => {
-      try {
-        const response = await axios.get(`${API_URI}/gallery`);
-        setItems(response.data.data || []);
-      } catch (error) {
-        console.log(error.message);
-      }
-    };
-    fetchGallery();
-  }, []);
+    dispatch(fetchGallery());
+  }, [dispatch]);
 
   const categories = useMemo(() => {
     const moodSet = new Set(items.map((item) => item.moodName));

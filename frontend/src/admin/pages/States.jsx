@@ -8,13 +8,21 @@ import {
   FaToggleOn,
   FaToggleOff,
 } from "react-icons/fa";
-import { API_URI } from "../../config/config";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchStates,
+  createState,
+  updateState,
+  deleteState,
+  updateStateStatus,
+} from "../../redux/slices/stateSlice";
+import { fetchRegions } from "../../redux/slices/regionSlice";
 
 const States = () => {
-  const [items, setItems] = useState([]);
-  const [regions, setregions] = useState([]);
+  const dispatch = useDispatch();
+  const { items } = useSelector((state) => state.state);
+  const { items: regions } = useSelector((state) => state.region);
   const [showModal, setShowModal] = useState(false);
-  // const [state, setState] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({ name: "", regionId: "" });
   const [error, setError] = useState("");
@@ -22,89 +30,21 @@ const States = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem("token");
-      let method = editingId ? "PUT" : "POST";
-      let url = editingId
-        ? `${API_URI}/state/${editingId}`
-        : `${API_URI}/state`;
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(formData),
-      });
-      const data = await response.json();
-      // console.log(data.populateState);
-      if (!response.ok) {
-        throw new Error(data.message || "failed to fetch region");
-      }
-      if (editingId) {
-        setItems((prev) =>
-          prev.map((item) =>
-            editingId == item._id ? data.populateState : item,
-          ),
-        );
-      } else {
-        setItems((prev) => [data.populateState, ...prev]);
+      const result = editingId
+        ? await dispatch(updateState({ id: editingId, data: formData }))
+        : await dispatch(createState(formData));
+      if (result.error) {
+        throw new Error(result.payload || "failed to save state");
       }
       closeModal();
     } catch (error) {
       setError(error.message);
     }
   };
-  const fetchRegions = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_URI}/region?isActive=true`, {
-        method: "get",
-        headers: {
-          authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "failed to fetch region");
-      }
-      setregions(data.regions);
-    } catch (error) {
-      setError(error.message);
-    }
-  };
-  const fetchStates = async (isActive) => {
-    let url = `${API_URI}/state`;
-    if (isActive != undefined) {
-      url = `${url}/?isActive=${isActive}`;
-    }
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(url, {
-        method: "get",
-        headers: {
-          authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "state not fetched");
-      }
-      setItems(data.states);
-      if (isActive === undefined) {
-        setActiveFilter("all");
-      } else if (isActive) {
-        setActiveFilter("active");
-      } else {
-        setActiveFilter("inactive");
-      }
-    } catch (error) {
-      setError(error.message);
-    }
-  };
   useEffect(() => {
-    fetchRegions();
-    fetchStates();
-  }, []);
+    dispatch(fetchRegions({ isActive: true }));
+    dispatch(fetchStates());
+  }, [dispatch]);
 
   const handleDelete = async (id) => {
     const confirmDelete = window.confirm(
@@ -113,19 +53,7 @@ const States = () => {
     if (!confirmDelete) {
       return;
     }
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_URI}/state/${id}`, {
-        method: "DELETE",
-        headers: {
-          authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
-      setItems((prev) => prev.filter((item) => item._id !== id));
-    } catch (error) {
-      setError(error.message);
-    }
+    dispatch(deleteState(id));
   };
   const openModal = (item = null) => {
     if (item) {
@@ -141,30 +69,15 @@ const States = () => {
     setShowModal(true);
   };
   const toggleStatus = async (id, current) => {
-    const newStatus = !current;
-    const token = localStorage.getItem("token");
     try {
-      const response = await fetch(`${API_URI}/state/${id}/status`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          isActive: newStatus,
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to update state");
+      const result = await dispatch(
+        updateStateStatus({ id, isActive: !current }),
+      );
+      if (result.error) {
+        throw new Error(result.payload || "Failed to update state");
       }
-
-      if (activeFilter === "all") {
-        setItems((prev) =>
-          prev.map((item) => (item._id === id ? data.populateState : item)),
-        );
-      } else {
-        setItems((prev) => prev.filter((item) => item._id !== id));
+      if (activeFilter !== "all") {
+        dispatch(fetchStates({ isActive: activeFilter === "active" }));
       }
     } catch (error) {
       setError(error.message);
@@ -193,7 +106,10 @@ const States = () => {
       </div>
       <div className="mb-4 flex flex-wrap gap-2">
         <button
-          onClick={() => fetchStates()}
+          onClick={() => {
+            setActiveFilter("all");
+            dispatch(fetchStates());
+          }}
           className={`rounded-lg px-4 py-2 text-sm font-semibold transition
       ${
         activeFilter === "all"
@@ -205,7 +121,10 @@ const States = () => {
         </button>
 
         <button
-          onClick={() => fetchStates(true)}
+          onClick={() => {
+            setActiveFilter("active");
+            dispatch(fetchStates({ isActive: true }));
+          }}
           className={`rounded-lg px-4 py-2 text-sm font-semibold transition
       ${
         activeFilter === "active"
@@ -217,7 +136,10 @@ const States = () => {
         </button>
 
         <button
-          onClick={() => fetchStates(false)}
+          onClick={() => {
+            setActiveFilter("inactive");
+            dispatch(fetchStates({ isActive: false }));
+          }}
           className={`rounded-lg px-4 py-2 text-sm font-semibold transition
       ${
         activeFilter === "inactive"

@@ -39,7 +39,7 @@ const FAQSection = () => {
         </div>
       </div>
 
-      <div className="mt-7 space-y-3">
+      <div className="mt-5 space-y-3">
         {faqs.map((faq, index) => {
           const isOpen = openIndex === index;
           return (

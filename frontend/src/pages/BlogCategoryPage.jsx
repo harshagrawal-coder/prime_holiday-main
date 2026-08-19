@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
+import { useDispatch, useSelector } from "react-redux";
 import BlogGrid from "../components/blog/BlogGrid";
 import BlogSidebar from "../components/blog/BlogSidebar";
 import FeaturedPost from "../components/blog/FeaturedPost";
 import SearchBar from "../components/blog/SearchBar";
 import LazyImage from "../components/ui/LazyImage";
 import { buildCategoryOptions, mapBlog } from "../utils/blogUtils";
-import axios from "axios";
-import { API_URI } from "../config/config";
+import { fetchBlogs } from "../redux/slices/blogSlice";
+import { fetchBlogCategories } from "../redux/slices/blogCategorySlice";
 
 const categoryHeroImages = {
   Adventure:
@@ -35,9 +36,9 @@ const INITIAL_VISIBLE = 6;
 
 const BlogCategoryPage = () => {
   const { categorySlug } = useParams();
-  const [blogPosts, setBlogPosts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const dispatch = useDispatch();
+  const { items: blogPosts, loading } = useSelector((state) => state.blog);
+  const { items: categories } = useSelector((state) => state.blogCategory);
   const [searchTerm, setSearchTerm] = useState("");
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
 
@@ -55,22 +56,9 @@ const BlogCategoryPage = () => {
   const categoryName = activeCategory?.name || "";
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [blogRes, catRes] = await Promise.all([
-          axios.get(`${API_URI}/blog`),
-          axios.get(`${API_URI}/blogCategory`),
-        ]);
-        setBlogPosts(blogRes.data.data || []);
-        setCategories(catRes.data.data || []);
-      } catch (error) {
-        console.log(error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
+    dispatch(fetchBlogs());
+    dispatch(fetchBlogCategories());
+  }, [dispatch]);
 
   const heroImage = categoryHeroImages[categoryName] || categoryHeroImages["Travel Tips"];
   const description = categoryDescriptions[categoryName] || "Explore stories in this category.";

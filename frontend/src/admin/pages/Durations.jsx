@@ -10,9 +10,17 @@ import {
   FaMoon,
   FaSun,
 } from "react-icons/fa";
-import { API_URI } from "../../config/config";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchDurations,
+  createDuration,
+  updateDuration,
+  deleteDuration,
+  updateDurationStatus,
+} from "../../redux/slices/durationSlice";
 const Durations = () => {
-  const [items, setItems] = useState([]);
+  const dispatch = useDispatch();
+  const { items } = useSelector((state) => state.duration);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({ name: "", nights: "", days: "" });
@@ -20,112 +28,43 @@ const Durations = () => {
   const [activeFilter, setActiveFilter] = useState("all");
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const url = editingId
-      ? `${API_URI}/duration/${editingId}`
-      : `${API_URI}/duration`;
-    const method = editingId ? "put" : "post";
-    const token = localStorage.getItem("token");
-    const response = await fetch(url, {
-      method,
-      headers: {
-        "Content-Type": "application/json",
-        authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(formData),
-    });
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.message || "failed to create duration");
-    }
-    if (editingId) {
-      setItems((prev) =>
-        prev.map((item) => (item._id === editingId ? data.duration : item)),
-      );
-    } else {
-      setItems((prev) => [data.duration, ...prev]);
-    }
-    closeModal();
-  };
-  const fetchDuration = async (isActive) => {
     try {
-      let url = `${API_URI}/duration`;
-      if (isActive !== undefined) {
-        url += `?isActive=${isActive}`;
+      const result = editingId
+        ? await dispatch(updateDuration({ id: editingId, data: formData }))
+        : await dispatch(createDuration(formData));
+      if (result.error) {
+        throw new Error(result.payload || "Failed to save duration");
       }
-
-      const token = localStorage.getItem("token");
-      const response = await fetch(url, {
-        method: "get",
-        headers: {
-          authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "failed to fetch duration");
-      }
-      setItems(data.durations)
-      if (isActive === undefined) {
-        setActiveFilter("all");
-      } else if (isActive) {
-        setActiveFilter("active");
-      } else {
-        setActiveFilter("inactive");
-      }
+      closeModal();
     } catch (error) {
       setError(error.message);
     }
   };
   useEffect(() => {
-    fetchDuration();
-  }, []);
+    dispatch(fetchDurations());
+  }, [dispatch]);
   const handleDelete = async (id) => {
     const confirmDelete = window.confirm("Delete this duration?");
     if (!confirmDelete) {
       return;
     }
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_URI}/duration/${id}`, {
-        method: "delete",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to delete duration");
-      }
-      setItems((prev) => prev.filter((item) => item._id !== id));
+      dispatch(deleteDuration(id));
     } catch (error) {
       setError(error.message);
     }
   };
 
   const toggleStatus = async (id, current) => {
-    const newStatus = !current;
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_URI}/duration/${id}/status`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          isActive: newStatus,
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to update duration status");
+      const result = await dispatch(
+        updateDurationStatus({ id, isActive: !current }),
+      );
+      if (result.error) {
+        throw new Error(result.payload || "Failed to update duration status");
       }
-      if (activeFilter === "all") {
-        setItems((prev) =>
-          prev.map((item) => (item._id === id ? data.duration : item)),
-        );
-      } else {
-        setItems((prev) => prev.filter((item) => item._id !== id));
+      if (activeFilter !== "all") {
+        dispatch(fetchDurations({ isActive: activeFilter === "active" }));
       }
     } catch (error) {
       setError(error.message);
@@ -172,7 +111,7 @@ const Durations = () => {
         <button
           onClick={() => {
             setActiveFilter("all");
-            fetchDuration();
+            dispatch(fetchDurations());
           }}
           className={`rounded-lg px-4 py-2 text-sm font-semibold transition
       ${
@@ -187,7 +126,7 @@ const Durations = () => {
         <button
           onClick={() => {
             setActiveFilter("active");
-            fetchDuration(true);
+            dispatch(fetchDurations({ isActive: true }));
           }}
           className={`rounded-lg px-4 py-2 text-sm font-semibold transition
       ${
@@ -202,7 +141,7 @@ const Durations = () => {
         <button
           onClick={() => {
             setActiveFilter("inactive");
-            fetchDuration(false);
+            dispatch(fetchDurations({ isActive: false }));
           }}
           className={`rounded-lg px-4 py-2 text-sm font-semibold transition
       ${

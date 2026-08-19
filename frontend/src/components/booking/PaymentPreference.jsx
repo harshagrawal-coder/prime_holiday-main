@@ -40,7 +40,7 @@ const PaymentPreference = ({ value, onChange }) => {
         </div>
       </div>
 
-      <div className="mt-7 grid gap-4 md:grid-cols-3">
+      <div className="mt-5 grid gap-4 md:grid-cols-3">
         {plans.map(({ value: planValue, label, desc, icon: Icon }) => {
           const isActive = value.paymentType === planValue;
           return (

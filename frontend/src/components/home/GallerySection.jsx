@@ -1,19 +1,15 @@
 import { FaArrowRight } from "react-icons/fa";
 import SectionHeading from "../ui/SectionHeading";
-// import { homeGalleryImages } from "../../data/homeGalleryImages";
 import LazyImage from "../ui/LazyImage";
-import { useEffect, useState } from "react";
-import { API_URI } from "../../config/config";
-import axios from "axios";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchGallery } from "../../redux/slices/gallerySlice";
 const GallerySection = () => {
-  const [homeGalleryImages, setHomeGalleryImages] = useState([])
-  const fetchGalleryImages = async () => {
-    const response = await axios.get(`${API_URI}/gallery`)
-    setHomeGalleryImages(response.data.data)
-  }
-  useEffect(()=>{
-    fetchGalleryImages()
-  },[])
+  const dispatch = useDispatch();
+  const { items: homeGalleryImages } = useSelector((state) => state.gallery);
+  useEffect(() => {
+    dispatch(fetchGallery());
+  }, [dispatch]);
   return (
     <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
       <SectionHeading

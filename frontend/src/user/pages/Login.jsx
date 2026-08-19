@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { API_URI } from "../../config/config";
+import { useDispatch, useSelector } from "react-redux";
+import { loginUser } from "../../redux/slices/authSlice";
 
 const Login = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { loading } = useSelector((state) => state.auth);
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
 
@@ -21,28 +24,11 @@ const Login = () => {
       return;
     }
     const { email, password } = formData;
-    try {
-      const response = await fetch(`${API_URI}/auth/login`, {
-        method: "post",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        setError(data.message || "Registration failed.");
-        return;
-      }
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("USER_STORAGE_KEY", JSON.stringify(data.userData));
+    const result = await dispatch(loginUser({ email, password }));
+    if (loginUser.fulfilled.match(result)) {
       navigate("/", { replace: true });
-    } catch (error) {
-      console.log(error);
-      setError("Something went wrong. Please try again.");
+    } else {
+      setError(result.payload || "Registration failed.");
     }
   };
 
@@ -97,9 +83,10 @@ const Login = () => {
 
           <button
             type="submit"
-            className="w-full rounded-xl bg-slate-950 px-4 py-3 text-sm font-black uppercase tracking-[0.18em] text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-orange-600"
+            disabled={loading}
+            className="w-full rounded-xl bg-slate-950 px-4 py-3 text-sm font-black uppercase tracking-[0.18em] text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Sign In
+            {loading ? "Signing in..." : "Sign In"}
           </button>
         </form>
 

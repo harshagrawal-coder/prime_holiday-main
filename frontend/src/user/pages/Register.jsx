@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { API_URI } from "../../config/config";
-const USER_STORAGE_KEY = "prime-holiday-user-auth";
+import { useDispatch, useSelector } from "react-redux";
+import { registerUser } from "../../redux/slices/authSlice";
 
 const Register = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { loading } = useSelector((state) => state.auth);
   const [formData, setFormData] = useState({
     fullname: "",
     email: "",
@@ -45,25 +47,14 @@ const Register = () => {
     }
 
     try {
-      const response = await fetch(`${API_URI}/auth/register`, {
-        method: "post",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          fullname,
-          email,
-          password,
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        setError(data.message || "Registration failed.");
-        return;
+      const result = await dispatch(
+        registerUser({ fullname, email, password }),
+      );
+      if (registerUser.fulfilled.match(result)) {
+        navigate("/", { replace: true });
+      } else {
+        setError(result.payload || "Registration failed.");
       }
-      localStorage.setItem("token", data.token);
-      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(data.userData));
-      navigate("/", { replace: true });
     } catch (error) {
       console.log(error);
       setError("Something went wrong. Please try again.");
@@ -147,9 +138,10 @@ const Register = () => {
 
           <button
             type="submit"
-            className="w-full rounded-xl bg-slate-950 px-4 py-3 text-sm font-black uppercase tracking-[0.18em] text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-orange-600"
+            disabled={loading}
+            className="w-full rounded-xl bg-slate-950 px-4 py-3 text-sm font-black uppercase tracking-[0.18em] text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Create Account
+            {loading ? "Creating Account..." : "Create Account"}
           </button>
         </form>
 

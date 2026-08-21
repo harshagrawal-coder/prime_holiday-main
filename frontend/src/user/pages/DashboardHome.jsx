@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { useSelector } from "react-redux";
 import { FaWallet, FaSuitcaseRolling, FaHeart, FaPlaneArrival, FaArrowRight, FaChevronDown } from "react-icons/fa";
 
 const DashboardHome = () => {
   const [showQuickLinks, setShowQuickLinks] = useState(false);
+  const { user } = useSelector((state) => state.auth);
 
   const stats = [
     {
@@ -64,7 +66,7 @@ const DashboardHome = () => {
             </p>
           </div>
           <h2 className="mt-3 text-3xl font-black uppercase italic leading-none tracking-tight text-slate-900 sm:text-5xl">
-            Welcome Back, <span className="text-slate-200">{user?.name?.split(" ")[0] || "Traveler"}</span>
+            Welcome Back, <span className="text-slate-200">{user?.fullname?.split(" ")[0] || "Traveler"}</span>
           </h2>
         </div>
       </div>

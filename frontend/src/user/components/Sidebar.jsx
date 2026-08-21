@@ -1,5 +1,7 @@
-import { Link, NavLink } from "react-router-dom";
-import { FaHome, FaSuitcaseRolling, FaHeart, FaUserCircle } from "react-icons/fa";
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { FaHome, FaSuitcaseRolling, FaHeart, FaUserCircle, FaSignOutAlt } from "react-icons/fa";
+import { logout } from "../../redux/slices/authSlice";
 
 const navItems = [
   { label: "Overview", to: "/dashboard", icon: FaHome, end: true },
@@ -9,6 +11,17 @@ const navItems = [
 ];
 
 const Sidebar = () => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { user } = useSelector((state) => state.auth);
+  const firstName = user?.fullname?.split(" ")[0] || "Traveler";
+  const initial = firstName.charAt(0).toUpperCase();
+
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate("/login", { replace: true });
+  };
+
   return (
     <aside className="hidden w-64 flex-col bg-white border-r border-slate-100 lg:flex sticky top-0 h-screen">
       <div className="flex h-20 items-center px-8 border-b border-slate-50">
@@ -20,11 +33,11 @@ const Sidebar = () => {
       <div className="flex-1 overflow-y-auto px-6 py-8">
         <div className="mb-8 flex items-center gap-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 text-orange-600 font-black text-xl">
-            U
+            {initial}
           </div>
           <div>
             <p className="text-xs font-black uppercase text-slate-400 tracking-wider">Welcome back</p>
-            <p className="text-sm font-bold text-slate-900 truncate w-32">Traveler</p>
+            <p className="text-sm font-bold text-slate-900 truncate w-32">{firstName}</p>
           </div>
         </div>
 
@@ -46,6 +59,14 @@ const Sidebar = () => {
               {item.label}
             </NavLink>
           ))}
+
+          <button
+            onClick={handleLogout}
+            className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-black uppercase tracking-widest text-red-500 transition-all duration-300 hover:bg-red-50"
+          >
+            <FaSignOutAlt size={16} />
+            Logout
+          </button>
         </nav>
       </div>
     </aside>

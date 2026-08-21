@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import toursData from "../../data/toursData.json";
+import { submitContactForm } from "../../services/contactService";
 
 const initialState = {
   name: "",
@@ -32,7 +33,7 @@ const ContactForm = () => {
   const handleFocus = (name) => setFocused((prev) => ({ ...prev, [name]: true }));
   const handleBlur = (name) => setFocused((prev) => ({ ...prev, [name]: false }));
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     const nextErrors = {};
@@ -47,8 +48,14 @@ const ContactForm = () => {
 
     if (Object.keys(nextErrors).length > 0) return;
 
-    setSubmitted(true);
-    setFormData(initialState);
+    try {
+      await submitContactForm(formData);
+      setSubmitted(true);
+      setFormData(initialState);
+    } catch (error) {
+      console.error("Failed to submit contact form:", error);
+      setErrors({ submit: "Failed to send inquiry. Please try again." });
+    }
   };
 
   return (

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaArrowLeft, FaArrowRight, FaFire } from "react-icons/fa";
 import { motion } from "framer-motion";
@@ -17,6 +17,7 @@ const TrendingSection = () => {
   const { items: trendingTours } = useSelector((state) => state.tour);
   const [index, setIndex] = useState(0);
   const [cardsPerView, setCardsPerView] = useState(3);
+  const [translateX, setTranslateX] = useState(0);
   const containerRef = useRef(null);
   const trackRef = useRef(null);
   const cardRefs = useRef([]);
@@ -40,23 +41,13 @@ const TrendingSection = () => {
     setIndex((prev) => Math.min(prev, maxIndex));
   }, [maxIndex]);
 
-  const measureTranslate = useCallback(() => {
-    if (cardRefs.current[index]) {
-      return -cardRefs.current[index].offsetLeft;
-    }
-    return 0;
-  }, [index]);
-
   useEffect(() => {
-    measureTranslate();
-  }, [cardsPerView, measureTranslate]);
+    const card = cardRefs.current[index];
+    setTranslateX(card ? -card.offsetLeft : 0);
+  }, [cardsPerView, index, trendingTours.length]);
 
   const handlePrev = () => setIndex((prev) => Math.max(prev - 1, 0));
   const handleNext = () => setIndex((prev) => Math.min(prev + 1, maxIndex));
-
-  const translateX = cardRefs.current[index]
-    ? -cardRefs.current[index].offsetLeft
-    : 0;
 
   return (
     <section className="mx-auto max-w-[1440px] overflow-x-clip bg-white px-4 py-16 sm:px-6 sm:py-4">

@@ -1,5 +1,4 @@
 import { body, validationResult } from "express-validator";
-
 const validateRequest = (req, res, next) => {
   const errors = validationResult(req);
 
@@ -11,7 +10,6 @@ const validateRequest = (req, res, next) => {
   }
   next();
 };
-
 export const validateRegisterUser = [
   // Full Name
   body("fullname")

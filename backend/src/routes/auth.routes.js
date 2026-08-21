@@ -4,9 +4,11 @@ import {
   login,
   GetUser,
   updateUserProfile,
-  logoutUser
+  logoutUser,
+  getUsers,
+  getUserCount,
 } from "../controller/auth.controller.js";
-import { authenticate } from "../middleware/auth.middleware.js";
+import { authenticate, isAdmin } from "../middleware/auth.middleware.js";
 import {
   validateRegisterUser,
   validateLoginUser,
@@ -14,7 +16,7 @@ import {
 } from "../validators/authvalidators.js";
 const authRouter = Router();
 authRouter.post("/register", validateRegisterUser, register);
-authRouter.post("/login", validateLoginUser, login);
+authRouter.post("/login", login);
 authRouter.get("/me", authenticate, GetUser);
 authRouter.put(
   "/update-profile",
@@ -22,5 +24,7 @@ authRouter.put(
   validateUpdateProfile,
   updateUserProfile,
 );
-authRouter.post("/logout",authenticate,logoutUser)
+authRouter.post("/logout", authenticate, logoutUser);
+authRouter.get("/get-userCount", authenticate, isAdmin, getUsers);
+authRouter.get("/user-count", authenticate, isAdmin, getUserCount);
 export default authRouter;

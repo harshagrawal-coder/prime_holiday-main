@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Menu, X } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import { logout } from "../../redux/slices/authSlice";
 
 const navLinks = [
   { name: "Home", path: "/" },
@@ -14,12 +16,23 @@ const navLinks = [
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { user } = useSelector((state) => state.auth);
 
   const isAccountActive =
     location.pathname.startsWith("/admin") ||
     location.pathname.startsWith("/dashboard");
 
   const isReserve = location.pathname.startsWith("/reserve");
+
+  const handleLogout = () => {
+    dispatch(logout());
+    setIsOpen(false);
+    navigate("/login", { replace: true });
+  };
+
+  const firstName = user?.fullname?.split(" ")[0] || "My Account";
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "unset";
@@ -58,18 +71,44 @@ const Header = () => {
               </Link>
             ))}
 
-            <Link
-              to="/login"
-              className={`inline-flex items-center rounded-full border px-5 py-2.5 font-primary text-[10px] font-bold uppercase tracking-[0.2em] transition-all duration-300 hover:-translate-y-0.5 hover:border-orange-500 hover:bg-orange-500 hover:text-white xl:text-xs ${
-                isAccountActive
-                  ? "border-orange-500 bg-orange-500 text-white shadow-lg shadow-orange-500/30"
-                  : isReserve
-                    ? "border-slate-200 bg-white text-slate-800 shadow-sm"
-                    : "border-white/30 bg-white/10 text-white backdrop-blur-md"
-              }`}
-            >
-              Sign In
-            </Link>
+            {user ? (
+              <div className="flex items-center gap-3">
+                <Link
+                  to="/dashboard"
+                  className={`inline-flex items-center gap-2 rounded-full border px-5 py-2.5 font-primary text-[10px] font-bold uppercase tracking-[0.2em] transition-all duration-300 hover:-translate-y-0.5 hover:border-orange-500 hover:bg-orange-500 hover:text-white xl:text-xs ${
+                    isAccountActive
+                      ? "border-orange-500 bg-orange-500 text-white shadow-lg shadow-orange-500/30"
+                      : isReserve
+                        ? "border-slate-200 bg-white text-slate-800 shadow-sm"
+                        : "border-white/30 bg-white/10 text-white backdrop-blur-md"
+                  }`}
+                >
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-[9px]">
+                    {firstName.charAt(0).toUpperCase()}
+                  </span>
+                  {firstName}
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="inline-flex items-center rounded-full border border-red-500/40 px-5 py-2.5 font-primary text-[10px] font-bold uppercase tracking-[0.2em] text-red-400 transition-all duration-300 hover:-translate-y-0.5 hover:bg-red-500 hover:text-white xl:text-xs"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <Link
+                to="/login"
+                className={`inline-flex items-center rounded-full border px-5 py-2.5 font-primary text-[10px] font-bold uppercase tracking-[0.2em] transition-all duration-300 hover:-translate-y-0.5 hover:border-orange-500 hover:bg-orange-500 hover:text-white xl:text-xs ${
+                  isAccountActive
+                    ? "border-orange-500 bg-orange-500 text-white shadow-lg shadow-orange-500/30"
+                    : isReserve
+                      ? "border-slate-200 bg-white text-slate-800 shadow-sm"
+                      : "border-white/30 bg-white/10 text-white backdrop-blur-md"
+                }`}
+              >
+                Sign In
+              </Link>
+            )}
           </nav>
 
           <button
@@ -110,17 +149,42 @@ const Header = () => {
           </Link>
         ))}
 
-        <Link
-          to="/login"
-          onClick={() => setIsOpen(false)}
-          className={`mt-4 inline-flex items-center justify-center rounded-full px-5 py-3 font-primary text-sm font-bold uppercase tracking-[0.18em] transition-all duration-300 ${
-            isAccountActive
-              ? "bg-orange-500 text-white shadow-lg shadow-orange-500/30"
-              : "bg-slate-950 text-white"
-          }`}
-        >
-          Sign In
-        </Link>
+        {user ? (
+          <>
+            <Link
+              to="/dashboard"
+              onClick={() => setIsOpen(false)}
+              className={`mt-4 inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 font-primary text-sm font-bold uppercase tracking-[0.18em] transition-all duration-300 ${
+                isAccountActive
+                  ? "bg-orange-500 text-white shadow-lg shadow-orange-500/30"
+                  : "bg-slate-950 text-white"
+              }`}
+            >
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/20 text-[10px]">
+                {firstName.charAt(0).toUpperCase()}
+              </span>
+              {firstName}
+            </Link>
+            <button
+              onClick={handleLogout}
+              className="inline-flex items-center justify-center rounded-full border-2 border-red-500/30 px-5 py-3 font-primary text-sm font-bold uppercase tracking-[0.18em] text-red-500 transition-all duration-300 hover:bg-red-500 hover:text-white"
+            >
+              Logout
+            </button>
+          </>
+        ) : (
+          <Link
+            to="/login"
+            onClick={() => setIsOpen(false)}
+            className={`mt-4 inline-flex items-center justify-center rounded-full px-5 py-3 font-primary text-sm font-bold uppercase tracking-[0.18em] transition-all duration-300 ${
+              isAccountActive
+                ? "bg-orange-500 text-white shadow-lg shadow-orange-500/30"
+                : "bg-slate-950 text-white"
+            }`}
+          >
+            Sign In
+          </Link>
+        )}
       </nav>
     </header>
   );

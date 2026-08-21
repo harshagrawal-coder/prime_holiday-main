@@ -50,7 +50,9 @@ const Cities = () => {
         return;
       }
       dispatch(deleteCity(id));
-    } catch (error) {}
+    } catch (error) {
+      setError(error.message || "Failed to delete city");
+    }
   };
 
   useEffect(() => {

@@ -25,11 +25,13 @@ const categoryHeroImages = {
 };
 
 const categoryDescriptions = {
-  Adventure: "Thrilling escapes, high-energy routes, and destinations built for adrenaline.",
+  Adventure:
+    "Thrilling escapes, high-energy routes, and destinations built for adrenaline.",
   Beaches: "Coastal retreats, island escapes, and sun-drenched shorelines.",
   Mountains: "Misty valleys, alpine landscapes, and cool mountain air.",
   Spiritual: "Sacred sites, temple towns, and journeys of inner discovery.",
-  "Travel Tips": "Smart planning guides, packing lists, and practical travel wisdom.",
+  "Travel Tips":
+    "Smart planning guides, packing lists, and practical travel wisdom.",
 };
 
 const INITIAL_VISIBLE = 6;
@@ -45,13 +47,16 @@ const BlogCategoryPage = () => {
   const mappedPosts = useMemo(() => blogPosts.map(mapBlog), [blogPosts]);
 
   const categoryOptions = useMemo(
-    () => [{ name: "All", slug: "" }, ...buildCategoryOptions(categories, mappedPosts)],
-    [categories, mappedPosts]
+    () => [
+      { name: "All", slug: "" },
+      ...buildCategoryOptions(categories, mappedPosts),
+    ],
+    [categories, mappedPosts],
   );
 
   const activeCategory = useMemo(
     () => categoryOptions.find((category) => category.slug === categorySlug),
-    [categoryOptions, categorySlug]
+    [categoryOptions, categorySlug],
   );
   const categoryName = activeCategory?.name || "";
 
@@ -60,14 +65,17 @@ const BlogCategoryPage = () => {
     dispatch(fetchBlogCategories());
   }, [dispatch]);
 
-  const heroImage = categoryHeroImages[categoryName] || categoryHeroImages["Travel Tips"];
-  const description = categoryDescriptions[categoryName] || "Explore stories in this category.";
+  const heroImage =
+    categoryHeroImages[categoryName] || categoryHeroImages["Travel Tips"];
+  const description =
+    categoryDescriptions[categoryName] || "Explore stories in this category.";
 
   const filteredPosts = useMemo(() => {
     if (!categorySlug) return [];
     return mappedPosts.filter((post) => {
       const matchesCategory = post.categorySlug === categorySlug;
-      const haystack = `${post.title} ${post.excerpt} ${post.category}`.toLowerCase();
+      const haystack =
+        `${post.title} ${post.excerpt} ${post.category}`.toLowerCase();
       const matchesSearch = haystack.includes(searchTerm.trim().toLowerCase());
       return matchesCategory && matchesSearch;
     });
@@ -75,7 +83,7 @@ const BlogCategoryPage = () => {
 
   const featuredPost = useMemo(
     () => filteredPosts.find((post) => post.featured) ?? filteredPosts[0],
-    [filteredPosts]
+    [filteredPosts],
   );
 
   const visiblePosts = filteredPosts
@@ -85,12 +93,16 @@ const BlogCategoryPage = () => {
   const popularPosts = [...mappedPosts]
     .sort((a, b) => b.dateValue - a.dateValue)
     .slice(0, 4);
-  const hasMore = filteredPosts.filter((post) => post._id !== featuredPost?._id).length > visibleCount;
+  const hasMore =
+    filteredPosts.filter((post) => post._id !== featuredPost?._id).length >
+    visibleCount;
 
   if (loading) {
     return (
       <section className="mx-auto max-w-4xl px-4 py-28 text-center sm:px-6">
-        <p className="text-[11px] font-black uppercase tracking-[0.3em] text-orange-500">Loading Stories</p>
+        <p className="text-[11px] font-black uppercase tracking-[0.3em] text-orange-500">
+          Loading Stories
+        </p>
       </section>
     );
   }
@@ -105,7 +117,8 @@ const BlogCategoryPage = () => {
           This category doesn&apos;t exist.
         </h1>
         <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-base">
-          The category you&apos;re looking for is not available. Browse all stories from the blog.
+          The category you&apos;re looking for is not available. Browse all
+          stories from the blog.
         </p>
         <Link
           to="/blog"
@@ -216,8 +229,8 @@ const BlogCategoryPage = () => {
                   Inspired by these {categoryName.toLowerCase()} stories?
                 </h2>
                 <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/70 sm:text-base">
-                  Turn inspiration into an itinerary with curated tours built around your pace,
-                  destination style, and travel dates.
+                  Turn inspiration into an itinerary with curated tours built
+                  around your pace, destination style, and travel dates.
                 </p>
               </div>
 

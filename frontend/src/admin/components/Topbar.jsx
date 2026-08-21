@@ -1,19 +1,19 @@
 import { FaBars, FaBell, FaSignOutAlt } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-
-const ADMIN_STORAGE_KEY = "prime-holiday-admin-auth";
+import { useDispatch, useSelector } from "react-redux";
+import { logout } from "../../redux/slices/authSlice";
 
 const Topbar = ({ onOpenSidebar }) => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { user } = useSelector((state) => state.auth);
   const [unreadCount, setUnreadCount] = useState(3);
 
-  const admin = JSON.parse(localStorage.getItem(ADMIN_STORAGE_KEY) || "null");
-
   const handleLogout = () => {
-    localStorage.removeItem("adminToken");
-    localStorage.removeItem(ADMIN_STORAGE_KEY);
-    navigate("/admin/login", { replace: true });
+    dispatch(logout());
+    // navigate("/admin/login", { replace: true }); //navigate react navigate
+    window.location.href = "/admin/login"; //redirect // javascript browser
   };
 
   return (
@@ -27,15 +27,17 @@ const Topbar = ({ onOpenSidebar }) => {
           <FaBars />
         </button>
         <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-orange-500">Admin Workspace</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-orange-500">
+            Admin Workspace
+          </p>
           <h1 className="mt-1 text-xl font-black tracking-tight text-slate-900 sm:text-2xl">
-            Welcome back, {admin?.name ?? "Admin"}
+            Welcome back, {user?.fullname ?? "Admin"}
           </h1>
         </div>
       </div>
 
       <div className="flex items-center gap-3">
-        <button 
+        <button
           onClick={() => navigate("/admin/notifications")}
           className="relative rounded-full border border-slate-200 bg-white p-3 text-slate-500 shadow-sm transition-colors hover:text-orange-500"
         >

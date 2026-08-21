@@ -11,7 +11,8 @@ import cityReducer from "./slices/citySlice";
 import durationReducer from "./slices/durationSlice";
 import testimonialReducer from "./slices/testimonialSlice";
 import heroReducer from "./slices/heroSlice";
-
+import dashboardReducer from "./slices/dashboardSlice";
+import getMeReducer from "./slices/getmeSlice";
 export const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -26,5 +27,7 @@ export const store = configureStore({
     duration: durationReducer,
     testimonial: testimonialReducer,
     hero: heroReducer,
+    dashboard: dashboardReducer,
+    getMe: getMeReducer,
   },
 });

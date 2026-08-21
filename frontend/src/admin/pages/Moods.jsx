@@ -90,7 +90,9 @@ const Moods = () => {
       if (activeFilter !== "all") {
         dispatch(fetchMoods({ isActive: activeFilter === "active" }));
       }
-    } catch (error) {}
+    } catch (error) {
+      setError(error.message || "Failed to update mood status");
+    }
   };
   const openModal = (item = null) => {
     if (item) {

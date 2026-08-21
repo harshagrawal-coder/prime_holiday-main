@@ -20,7 +20,10 @@ const Reviews = () => {
       ) : (
         <div className="space-y-4">
           {reviews.map((r) => (
-            <div key={r.id} className="rounded-xl border border-slate-200 bg-white p-4">
+            <div
+              key={r.id}
+              className="rounded-xl border border-slate-200 bg-white p-4"
+            >
               <p className="text-sm text-slate-600">{r.text}</p>
             </div>
           ))}

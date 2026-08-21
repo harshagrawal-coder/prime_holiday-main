@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { loginUser } from "../../redux/slices/authSlice";
-
+import { loginUser,logout } from "../../redux/slices/authSlice";
+import {fetchMe} from "../../redux/slices/getmeSlice"
 const Login = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -12,7 +12,7 @@ const Login = () => {
   const handleChange = (event) => {
     const { name, value } = event.target;
     setFormData((current) => ({ ...current, [name]: value }));
-    setError("value should be fill");
+    setError("");
   };
  const handleSubmit = async (e) => {
     e.preventDefault();
@@ -24,9 +24,19 @@ const Login = () => {
     const { email, password } = formData;
     const result = await dispatch(loginUser({ email, password }));
     if (loginUser.fulfilled.match(result)) {
-      navigate("/admin", { replace: true });
+      const me = await dispatch(fetchMe());
+      if (fetchMe.fulfilled.match(me)) {
+        if (me.payload.user?.role === "admin") {
+          navigate("/admin", { replace: true });
+        } else {
+          dispatch(logout());
+          setError("You do not have admin access.");
+        }
+      } else {
+        setError("Something went wrong. Please try again.");
+      }
     } else {
-      setError(result.payload || "Login failed.");
+      setError("Invalid email or password.");
     }
   };
 

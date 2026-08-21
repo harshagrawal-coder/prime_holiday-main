@@ -1,24 +1,25 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { registerUser } from "../../redux/slices/authSlice";
-
+import { clearError, registerUser } from "../../redux/slices/authSlice";
+import { fetchMe } from "../../redux/slices/getmeSlice";
 const Register = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { loading } = useSelector((state) => state.auth);
+  const { loading, error: authError } = useSelector((state) => state.auth);
   const [formData, setFormData] = useState({
     fullname: "",
     email: "",
     password: "",
     confirmPassword: "",
   });
-  const [error, setError] = useState("");
+  const [formError, setFormError] = useState("");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    setError("");
+    setFormError("");
+    dispatch(clearError());
   };
 
   const handleSubmit = async (e) => {
@@ -32,32 +33,28 @@ const Register = () => {
       !password.trim() ||
       !confirmPassword.trim()
     ) {
-      setError("All fields are required.");
+      setFormError("All fields are required.");
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match.");
+      setFormError("Passwords do not match.");
       return;
     }
 
     if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
+      setFormError("Password must be at least 6 characters.");
       return;
     }
 
     try {
-      const result = await dispatch(
-        registerUser({ fullname, email, password }),
-      );
-      if (registerUser.fulfilled.match(result)) {
-        navigate("/", { replace: true });
-      } else {
-        setError(result.payload || "Registration failed.");
-      }
-    } catch (error) {
-      console.log(error);
-      setError("Something went wrong. Please try again.");
+      await dispatch(registerUser({ fullname, email, password })).unwrap();
+      const me = await dispatch(fetchMe()).unwrap();
+      navigate(me.user?.role === "admin" ? "/admin" : "/", {
+        replace: true,
+      });
+    } catch {
+      // Backend errors are kept in auth.error and rendered below.
     }
   };
 
@@ -76,7 +73,7 @@ const Register = () => {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form noValidate onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-600">
               Full Name
@@ -130,9 +127,9 @@ const Register = () => {
             />
           </div>
 
-          {error && (
+          {(formError || authError) && (
             <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
-              {error}
+              {formError || authError}
             </div>
           )}
 

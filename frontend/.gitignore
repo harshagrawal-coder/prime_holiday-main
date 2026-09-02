@@ -24,3 +24,5 @@ dist-ssr
 *.sw?
 src/assets/Git-2.53.0-64-bit.exe
 src/assets/wg-CA-FREE-1.conf
+
+.vercel

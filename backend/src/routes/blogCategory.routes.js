@@ -6,7 +6,7 @@ import {
   getBlogCategoryById,
   updateBlogCategory,
   deleteBlogCategory,
-} from "../controller/blogCategory.controller.js";
+} from "../controller/BlogCategory.controller.js";
 import { authenticate, isAdmin } from "../middleware/auth.middleware.js";
 import {
   validateCreateBlogCategory,

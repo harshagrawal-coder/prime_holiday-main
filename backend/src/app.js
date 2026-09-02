@@ -21,7 +21,7 @@ app.use(
     origin: [
       "http://localhost:5173",
       "https://prime-holiday-main-jajh.vercel.app",
-      "https://prime-holidays.vercel.app/",
+      "https://prime-holidays.vercel.app",
     ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],

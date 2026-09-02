@@ -1,1 +1,1 @@
-export const API_URI = "http://localhost:8080/api"
+export const API_URI = "https://prime-holiday-main.onrender.com/api";

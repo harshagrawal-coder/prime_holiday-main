@@ -20,7 +20,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173",
-      "https://prime-holiday-main-jajh.vercel.app/",
+      "https://prime-holiday-main-jajh.vercel.app",
     ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -30,7 +30,6 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookie());
-
 app.use("/api/auth", authRouter);
 // app.use("/website", authRouter);
 app.use("/api/region", regionRouter);

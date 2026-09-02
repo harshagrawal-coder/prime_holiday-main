@@ -1,5 +1,5 @@
 import HeroHomePage from "../model.js/HeroHomepage.schema.js";
-import { uploadFile, deleteFile } from "../services/imageKit.js"
+import { uploadFile, deleteFile } from "../services/imagekit.js"
 
 export const createHomePageHero = async (req, res) => {
     const uploadFileIds = [];

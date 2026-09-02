@@ -75,7 +75,7 @@ const moreItems = [
     end: true,
   },
   { label: "Coupons", to: "/admin/coupons", icon: FaTicketAlt, end: true },
-  { label: "Messages", to: "/admin/messages", icon: FaEnvelope, end: true },
+  // { label: "Messages", to: "/admin/messages", icon: FaEnvelope, end: true },
   { label: "Contacts", to: "/admin/contacts", icon: FaEnvelope, end: true },
   { label: "Activity", to: "/admin/activity", icon: FaClock, end: true },
   { label: "Settings", to: "/admin/settings", icon: FaCog, end: true },
